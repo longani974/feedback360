@@ -1,4 +1,4 @@
-import { Package2, Home, MessageSquare, User } from 'lucide-react';
+import { Home, MessageSquare, User, Drama } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getLinkClassName } from '@/utils';
 
@@ -14,7 +14,7 @@ const SideBar = () => {
                         to="/"
                         className="flex items-center gap-2 font-semibold"
                     >
-                        <Package2 className="h-6 w-6" />
+                        <Drama className="h-6 w-6" />
                         <span className="">Feedback 360</span>
                     </Link>
                     {/* <Button
