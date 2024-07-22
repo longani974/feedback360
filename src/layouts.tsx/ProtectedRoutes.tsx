@@ -1,4 +1,5 @@
 // import { useUser } from '@/context/AuthContext';
+import SideBar from '@/components/SideBar';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 // import { account } from '@/lib/appWrite/config';
@@ -16,7 +17,8 @@ const ProtectedRoutes = () => {
 
     return (
         <>
-            <div>DashboardLayout</div>
+            <SideBar></SideBar>
+
             <Outlet />
             <Button onClick={handleLogout}>Logout</Button>
         </>
