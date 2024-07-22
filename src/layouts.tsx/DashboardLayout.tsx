@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { CircleUser, Search } from 'lucide-react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { Input } from '@/components/ui/input';
 import {
@@ -14,9 +14,17 @@ import {
 import SideBar from '@/components/SideBar';
 import SideBarMobile from '@/components/SideBarMobile';
 import { getPageTitle } from '@/utils';
+import { useAuth } from '@/context/AuthContext';
 
 const DashboardLayout = () => {
     const location = useLocation();
+    const navigate = useNavigate();
+    const { logout } = useAuth();
+
+    const handleLogout = async () => {
+        await logout();
+        navigate('/sign-in');
+    };
 
     return (
         <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
@@ -61,10 +69,22 @@ const DashboardLayout = () => {
                         <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Mon Compte</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem>Modifer</DropdownMenuItem>
+                            <Link to="/app/profile">
+                                <DropdownMenuItem className="cursor-pointer">
+                                    Modifer
+                                </DropdownMenuItem>
+                            </Link>
                             {/* <DropdownMenuItem>Aide</DropdownMenuItem> */}
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem>Me déconnecter</DropdownMenuItem>
+                            <DropdownMenuItem
+                                className="cursor-pointer"
+                                onClick={() => {
+                                    handleLogout();
+                                }}
+                            >
+                                {' '}
+                                Me déconnecter
+                            </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </header>
