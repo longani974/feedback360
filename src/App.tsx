@@ -21,6 +21,7 @@ import PublicLayout from './layouts.tsx/PublicLayout';
 import { loginAction, signupAction } from './lib/authUtils';
 import { AuthProvider } from './context/AuthContext';
 import { account } from './lib/appWrite/config';
+import DashboardLayout from './layouts.tsx/DashboardLayout';
 
 const router = createBrowserRouter(
     createRoutesFromElements(
@@ -56,23 +57,22 @@ const router = createBrowserRouter(
                 }}
                 element={<ProtectedRoutes />}
             >
-                <Route index element={<Dashboard />} />
-                <Route path="dashboard" element={<Dashboard />} />
-                <Route path="feedbacks" element={<FeedbackList />} />
-                <Route path="feedbacks/create" element={<CreateFeedback />} />
-                <Route
-                    path="feedbacks/view/:campaignId"
-                    element={<ViewFeedback />}
-                />
-                <Route
-                    path="feedbacks/report/:campaignId"
-                    element={<Report />}
-                />
-                <Route
-                    path="feedbacks/answer/:campaignId"
-                    element={<AnswerFeedback />}
-                />
-                <Route path="profile" element={<UserProfile />} />
+                <Route element={<DashboardLayout />}>
+                    <Route index element={<Dashboard />} />
+                    <Route path="feedbacks" element={<FeedbackList />}>
+                        <Route path="create" element={<CreateFeedback />} />
+                        <Route
+                            path="view/:campaignId"
+                            element={<ViewFeedback />}
+                        />
+                        <Route path="report/:campaignId" element={<Report />} />
+                        <Route
+                            path="answer/:campaignId"
+                            element={<AnswerFeedback />}
+                        />
+                    </Route>
+                    <Route path="profile" element={<UserProfile />} />
+                </Route>
             </Route>
         </Route>
     )

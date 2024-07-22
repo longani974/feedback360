@@ -1,4 +1,4 @@
-import { Button } from './ui/button';
+import { Button } from '@/components/ui/button';
 import {
     Home,
     Bell,
@@ -16,9 +16,9 @@ import {
     CardTitle,
     CardDescription,
     CardContent,
-} from './ui/card';
-import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
-import { Input } from './ui/input';
+} from '@/components/ui/card';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Input } from '@/components/ui/input';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -26,7 +26,7 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from './ui/dropdown-menu';
+} from '@/components/ui/dropdown-menu';
 
 const SideBar = () => {
     const location = useLocation();
