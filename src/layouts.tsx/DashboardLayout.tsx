@@ -15,11 +15,17 @@ import SideBar from '@/components/SideBar';
 import SideBarMobile from '@/components/SideBarMobile';
 import { getPageTitle } from '@/utils';
 import { useAuth } from '@/context/AuthContext';
+import { avatars } from '@/lib/appWrite/config';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const DashboardLayout = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { logout } = useAuth();
+    const { logout, user } = useAuth();
+
+    const initialUserAvatar = avatars
+        .getInitials(user?.name || user?.email)
+        .toString();
 
     const handleLogout = async () => {
         await logout();
@@ -60,7 +66,13 @@ const DashboardLayout = () => {
                                 size="icon"
                                 className="rounded-full"
                             >
-                                <CircleUser className="h-5 w-5" />
+                                {/* <CircleUser className="h-5 w-5" /> */}
+                                <Avatar>
+                                    <AvatarImage src={initialUserAvatar} />
+                                    <AvatarFallback>
+                                        <CircleUser className="h-5 w-5" />
+                                    </AvatarFallback>
+                                </Avatar>
                                 <span className="sr-only">
                                     Toggle user menu
                                 </span>
