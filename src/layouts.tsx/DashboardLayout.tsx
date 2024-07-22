@@ -1,8 +1,6 @@
 import { Button } from '@/components/ui/button';
-import { CircleUser, Search } from 'lucide-react';
+import { CircleUser } from 'lucide-react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-
-import { Input } from '@/components/ui/input';
 import {
     DropdownMenu,
     DropdownMenuContent,
