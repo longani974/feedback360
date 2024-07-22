@@ -1,13 +1,6 @@
 import { Menu, Package2, Home, MessageSquare, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from './ui/button';
-import {
-    Card,
-    CardHeader,
-    CardTitle,
-    CardDescription,
-    CardContent,
-} from './ui/card';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { getLinkClassName } from '@/utils';
 
@@ -64,7 +57,7 @@ const SideBarMobile = () => {
                 {/* ---------------------------------------- */}
                 {/* FOOTER */}
                 {/* ---------------------------------------- */}
-                <div className="mt-auto p-4">
+                {/* <div className="mt-auto p-4">
                     <Card x-chunk="dashboard-02-chunk-0">
                         <CardHeader className="p-2 pt-0 md:p-4">
                             <CardTitle>Upgrade to Pro</CardTitle>
@@ -79,7 +72,7 @@ const SideBarMobile = () => {
                             </Button>
                         </CardContent>
                     </Card>
-                </div>
+                </div> */}
             </SheetContent>
         </Sheet>
     );

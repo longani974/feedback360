@@ -1,13 +1,5 @@
-import { Package2, Bell, Home, MessageSquare, User } from 'lucide-react';
+import { Package2, Home, MessageSquare, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Button } from './ui/button';
-import {
-    Card,
-    CardHeader,
-    CardTitle,
-    CardDescription,
-    CardContent,
-} from './ui/card';
 import { getLinkClassName } from '@/utils';
 
 const SideBar = () => {
@@ -25,14 +17,14 @@ const SideBar = () => {
                         <Package2 className="h-6 w-6" />
                         <span className="">Feedback 360</span>
                     </Link>
-                    <Button
+                    {/* <Button
                         variant="outline"
                         size="icon"
                         className="ml-auto h-8 w-8"
                     >
                         <Bell className="h-4 w-4" />
                         <span className="sr-only">Toggle notifications</span>
-                    </Button>
+                    </Button> */}
                 </div>
                 {/* ---------------------------------------- */}
                 {/* NAVIGATION */}
@@ -69,7 +61,7 @@ const SideBar = () => {
                 {/* ---------------------------------------- */}
                 {/* FOOTER */}
                 {/* ---------------------------------------- */}
-                <div className="mt-auto p-4">
+                {/* <div className="mt-auto p-4">
                     <Card x-chunk="dashboard-02-chunk-0">
                         <CardHeader className="p-2 pt-0 md:p-4">
                             <CardTitle>Upgrade to Pro</CardTitle>
@@ -84,7 +76,7 @@ const SideBar = () => {
                             </Button>
                         </CardContent>
                     </Card>
-                </div>
+                </div> */}
                 {/* ---------------------------------------- */}
             </div>
         </div>
