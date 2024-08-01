@@ -1,3 +1,4 @@
+// src/routes/Signup.tsx
 import {
     Card,
     CardContent,
@@ -7,36 +8,32 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { AuthForm } from '../components/AuthForm';
-import { Link } from 'react-router-dom';
-import { useActionData, useNavigate, useNavigation } from 'react-router-dom';
+import { Link, useNavigate, useNavigation } from 'react-router-dom';
 import { useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { Models } from 'appwrite';
+import { useActionData } from 'react-router-dom';
+import { User } from 'firebase/auth';
 
 type ActionData = {
     success?: boolean;
-    user?: Models.User<Models.Preferences>;
+    user?: User;
     error?: string;
     errors?: {
         email?: string[];
         password?: string[];
         confirmPassword?: string[];
     };
-    alreadyLoggedIn?: boolean;
 };
 
 export default function SignUp() {
     const actionData = useActionData() as ActionData | undefined;
     const navigation = useNavigation();
     const navigate = useNavigate();
-    const { setUser } = useAuth();
 
     useEffect(() => {
         if (actionData?.success && actionData.user) {
-            setUser(actionData.user);
             navigate('/app');
         }
-    }, [actionData, setUser, navigate]);
+    }, [actionData, navigate]);
 
     return (
         <div className="flex items-center justify-center min-h-screen mt-4 mb-4">
@@ -72,7 +69,7 @@ export default function SignUp() {
                 <CardFooter>
                     <p className="text-gray-600 text-xs">
                         Vous avez déjà un compte ?{' '}
-                        <Link to="/login">Connectez-vous ici</Link>
+                        <Link to="/sign-in">Connectez-vous ici</Link>
                     </p>
                 </CardFooter>
             </Card>

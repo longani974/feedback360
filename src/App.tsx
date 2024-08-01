@@ -3,7 +3,6 @@ import {
     RouterProvider,
     Route,
     createRoutesFromElements,
-    redirect,
 } from 'react-router-dom';
 import './App.css';
 import Home from './routes/Home';
@@ -20,7 +19,6 @@ import ProtectedRoutes from './layouts.tsx/ProtectedRoutes';
 import PublicLayout from './layouts.tsx/PublicLayout';
 import { loginAction, signupAction } from './lib/authUtils';
 import { AuthProvider } from './context/AuthContext';
-import { account } from './lib/appWrite/config';
 import DashboardLayout from './layouts.tsx/DashboardLayout';
 
 const router = createBrowserRouter(
@@ -43,20 +41,7 @@ const router = createBrowserRouter(
                 />
             </Route>
             {/* Protected */}
-            <Route
-                path="/app"
-                loader={async () => {
-                    try {
-                        // logged in? pass user to the route
-                        const user = await account.get();
-                        return { user };
-                    } catch {
-                        // not logged in? redirect to login
-                        throw redirect('/sign-in');
-                    }
-                }}
-                element={<ProtectedRoutes />}
-            >
+            <Route path="/app" element={<ProtectedRoutes />}>
                 <Route element={<DashboardLayout />}>
                     <Route index element={<Dashboard />} />
                     <Route path="feedbacks" element={<FeedbackList />}>

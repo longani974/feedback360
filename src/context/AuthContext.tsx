@@ -1,57 +1,39 @@
-import { account } from '@/lib/appWrite/config';
-import { Models } from 'appwrite';
-import { createContext, useContext, useEffect, useState } from 'react';
-import { Outlet, useLoaderData } from 'react-router-dom';
-
-type User = Models.User<Models.Preferences> | null;
+// src/context/AuthContext.tsx
+import { createContext, useContext } from 'react';
+import { Outlet } from 'react-router-dom';
+import { useAuthState, useSignOut } from 'react-firebase-hooks/auth';
+import { User } from 'firebase/auth'; // Importer le type User
+import { auth } from '@/firebase';
 
 type UserContextType = {
-    user: User;
-    setUser: React.Dispatch<User>;
+    user: User | null | undefined;
     logout: () => Promise<void>;
 };
+
 export const AuthContext = createContext<UserContextType | null>(null);
 
 export const AuthProvider = () => {
-    const loaderData = useLoaderData() as { user?: User }; // Spécifiez le type de loaderData
-    const [user, setUser] = useState<User>(loaderData?.user ?? null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const checkAuth = async () => {
-            try {
-                const currentUser = await account.get();
-                setUser(currentUser);
-            } catch (error) {
-                console.log(error);
-                setUser(null);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (!loaderData || !loaderData.user) {
-            checkAuth();
-        } else {
-            setLoading(false);
-        }
-    }, [loaderData]);
+    const [user, loading, error] = useAuthState(auth);
+    const [signOut, signOutLoading, signOutError] = useSignOut(auth);
 
     const logout = async () => {
         try {
-            await account.deleteSessions();
-            setUser(null);
+            await signOut();
         } catch (error) {
             console.error('Logout failed:', error);
         }
     };
 
-    if (loading) {
+    if (loading || signOutLoading) {
         return <div>Loading...</div>;
     }
 
+    if (error || signOutError) {
+        return <div>Error: {error?.message || signOutError?.message}</div>;
+    }
+
     return (
-        <AuthContext.Provider value={{ user, setUser, logout }}>
+        <AuthContext.Provider value={{ user, logout }}>
             <Outlet />
         </AuthContext.Provider>
     );

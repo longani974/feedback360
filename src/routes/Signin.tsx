@@ -1,3 +1,4 @@
+// src/routes/Signin.tsx
 import {
     Card,
     CardContent,
@@ -7,40 +8,31 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { AuthForm } from '../components/AuthForm';
-import { Link } from 'react-router-dom';
-import { useActionData, useNavigate, useNavigation } from 'react-router-dom';
+import { Link, useNavigate, useNavigation } from 'react-router-dom';
 import { useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { Models } from 'appwrite';
+import { useActionData } from 'react-router-dom';
+import { User } from 'firebase/auth';
 
 type ActionData = {
     success?: boolean;
-    user?: Models.User<Models.Preferences>;
+    user?: User;
     error?: string;
     errors?: {
         email?: string[];
         password?: string[];
     };
-    alreadyLoggedIn?: boolean;
 };
 
-export default function Login() {
+export default function SignIn() {
     const actionData = useActionData() as ActionData | undefined;
     const navigation = useNavigation();
     const navigate = useNavigate();
-    const { setUser } = useAuth();
 
     useEffect(() => {
         if (actionData?.success && actionData.user) {
-            setUser(actionData.user);
-            // if (actionData.alreadyLoggedIn) {
-            //     alert(
-            //         'Vous êtes déjà connecté. Redirection vers le tableau de bord.'
-            //     );
-            // }
             navigate('/app');
         }
-    }, [actionData, setUser, navigate]);
+    }, [actionData, navigate]);
 
     return (
         <div className="flex items-center justify-center min-h-screen mt-4 mb-4">
