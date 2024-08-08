@@ -17,9 +17,14 @@ import UserProfile from './routes/UserProfile';
 import Report from './routes/Report';
 import ProtectedRoutes from './layouts.tsx/ProtectedRoutes';
 import PublicLayout from './layouts.tsx/PublicLayout';
-import { loginAction, signupAction } from './lib/authUtils';
+import {
+    addOrganisationAction,
+    loginAction,
+    signupAction,
+} from './lib/authUtils';
 import { AuthProvider } from './context/AuthContext';
 import DashboardLayout from './layouts.tsx/DashboardLayout';
+import NewOrganisation from './routes/NewOrganisation';
 
 const router = createBrowserRouter(
     createRoutesFromElements(
@@ -57,6 +62,12 @@ const router = createBrowserRouter(
                         />
                     </Route>
                     <Route path="profile" element={<UserProfile />} />
+                    <Route
+                        path="add-organisation"
+                        element={<NewOrganisation />}
+                        action={addOrganisationAction}
+                        errorElement={<div>Oups</div>}
+                    />
                 </Route>
             </Route>
         </Route>

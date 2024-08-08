@@ -3,9 +3,16 @@ import { ActionFunctionArgs } from 'react-router-dom';
 import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
+    getAuth,
 } from 'firebase/auth';
 import { auth } from '@/firebase';
 import { loginSchema, signupSchema } from './schemas';
+import { organisationSchema } from '@/schemas/firestoreSchela';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import {
+    CreateOrganisationParams,
+    CreateOrganisationResult,
+} from '../../functions/src/index';
 
 async function handleAuthAction(
     actionType: 'signIn' | 'signUp',
@@ -59,4 +66,61 @@ export async function signupAction({ request }: ActionFunctionArgs) {
     }
 
     return await handleAuthAction('signUp', email, password, name);
+}
+const functions = getFunctions();
+const createOrganisation = httpsCallable<
+    CreateOrganisationParams,
+    CreateOrganisationResult
+>(functions, 'createOrganisation');
+
+async function createNewOrganisation(
+    organisationName: CreateOrganisationParams
+) {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) {
+        console.error('User is not authenticated.');
+        return;
+    }
+
+    try {
+        const result = await createOrganisation(organisationName);
+        if (result.data.success) {
+            console.log(
+                'Organisation created with ID:',
+                result.data.organisationId
+            );
+        } else {
+            console.error('Error creating organisation:', result.data.error);
+        }
+    } catch (error) {
+        console.error('Error calling function:', error);
+    }
+}
+
+export async function addOrganisationAction({ request }: ActionFunctionArgs) {
+    console.log('adding');
+
+    const formData = await request.formData();
+    const name = formData.get('name') as string;
+
+    const result = organisationSchema.safeParse({ nomOrganisation: name });
+    if (!result.success) {
+        return { errors: result.error.flatten().fieldErrors };
+    }
+
+    try {
+        const result = await createNewOrganisation({ organisationName: name });
+        // const result = await addDoc(collection(db, 'organisations'), {
+        //     name,
+        // });
+        console.log(result);
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return {
+            error: 'Échec de lors de la création. Réessyez plus tard',
+        };
+    }
 }
