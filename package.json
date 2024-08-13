@@ -10,7 +10,7 @@
         "build:all": "npm run build && npm run build:functions",
         "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
         "preview": "vite preview",
-        "kill 8080": "npx kill-port 8080",
+        "kill:8080": "npx kill-port 8080",
         "emulators": "firebase emulators:start --import=data",
         "emulators:save": "firebase emulators:export data"
     },
