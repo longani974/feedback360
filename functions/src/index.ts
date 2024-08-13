@@ -117,6 +117,7 @@ export const createOrganisation = onCall<
             userOrganisationRef.set({
                 userId: userId,
                 organisationId: organisationRef.id,
+                isAdmin: true,
                 createdAt: FieldValue.serverTimestamp(),
             }),
         ]).catch((error) => {

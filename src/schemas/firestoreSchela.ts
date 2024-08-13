@@ -49,7 +49,7 @@ export type Réponse = z.infer<typeof réponseSchema>;
 export const userOrganisationRelationSchema = z.object({
     userID: z.string(),
     organisationID: z.string(),
-    rôle: z.string(),
+    isAdmin: z.boolean(),
 });
 
 export type UserOrganisationRelation = z.infer<

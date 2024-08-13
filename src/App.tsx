@@ -63,6 +63,10 @@ const router = createBrowserRouter(
                     </Route>
                     <Route path="profile" element={<UserProfile />} />
                     <Route
+                        path="organisations"
+                        element={<div>Mes organisations</div>}
+                    />
+                    <Route
                         path="add-organisation"
                         element={<NewOrganisation />}
                         action={addOrganisationAction}

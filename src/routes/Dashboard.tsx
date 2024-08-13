@@ -8,9 +8,12 @@ const Dashboard = () => {
         <div className="flex flex-col">
             <div>Dashboard</div>
             <div>Welcome {user?.uid}</div>
-            <Button>
-                <Link to="/app/add-organisation">Ajouter une organisation</Link>
-            </Button>
+            <Link to="/app/add-organisation">
+                <Button>Ajouter une organisation</Button>
+            </Link>
+            <Link to="/app/organisations">
+                <Button>Mes organisations</Button>
+            </Link>
         </div>
     );
 };

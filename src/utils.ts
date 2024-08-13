@@ -23,6 +23,10 @@ export const getPageTitle = (pathname: string) => {
             return 'Feedbacks';
         case 'profile':
             return 'Mon profil';
+        case 'organisations':
+            return 'Mes Organisations';
+        case 'add-organisation':
+            return 'Nouvelle Organisation';
         default:
             return 'Page';
     }
