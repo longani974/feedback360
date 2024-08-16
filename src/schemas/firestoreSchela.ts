@@ -11,14 +11,14 @@ export type User = z.infer<typeof userSchema>;
 
 // Schéma pour la collection Organisations
 export const organisationSchema = z.object({
-    nomOrganisation: z.string(),
+    name: z.string(),
 });
 
-export type Organisation = z.infer<typeof organisationSchema>;
+export type Organisation = z.infer<typeof organisationSchema> & { id: string };
 
 // Schéma pour la collection Questionnaires
 export const questionnaireSchema = z.object({
-    organisationID: z.string(),
+    organisationId: z.string(),
     titre: z.string(),
     dateCréation: z.string(), // ou z.date() si vous préférez travailler avec des objets Date
 });
@@ -27,7 +27,7 @@ export type Questionnaire = z.infer<typeof questionnaireSchema>;
 
 // Schéma pour la collection Questions
 export const questionSchema = z.object({
-    questionnaireID: z.string(),
+    questionnaireId: z.string(),
     texteQuestion: z.string(),
     typeQuestion: z.enum(['choix multiples', 'réponse libre']),
     options: z.array(z.string()).optional(),
@@ -37,18 +37,18 @@ export type Question = z.infer<typeof questionSchema>;
 
 // Schéma pour la collection Réponses
 export const réponseSchema = z.object({
-    userID: z.string(),
-    questionID: z.string(),
+    userId: z.string(),
+    questionId: z.string(),
     réponse: z.string(),
-    questionnaireID: z.string(),
+    questionnaireId: z.string(),
 });
 
 export type Réponse = z.infer<typeof réponseSchema>;
 
 // Schéma pour la collection Users_Organisations
 export const userOrganisationRelationSchema = z.object({
-    userID: z.string(),
-    organisationID: z.string(),
+    userId: z.string(),
+    organisationId: z.string(),
     isAdmin: z.boolean(),
 });
 
@@ -58,8 +58,8 @@ export type UserOrganisationRelation = z.infer<
 
 // Schéma pour la collection Participations
 export const participationSchema = z.object({
-    userID: z.string(),
-    questionnaireID: z.string(),
+    userId: z.string(),
+    questionnaireId: z.string(),
     dateParticipation: z.string(), // ou z.date()
 });
 
@@ -67,7 +67,7 @@ export type Participation = z.infer<typeof participationSchema>;
 
 // Schéma pour la collection Équipes
 export const équipeSchema = z.object({
-    organisationID: z.string(),
+    organisationId: z.string(),
     nomÉquipe: z.string(),
 });
 
@@ -75,8 +75,8 @@ export type Équipe = z.infer<typeof équipeSchema>;
 
 // Schéma pour la collection Team_Users
 export const teamUserRelationSchema = z.object({
-    teamID: z.string(),
-    userID: z.string(),
+    teamId: z.string(),
+    userId: z.string(),
     rôle: z.string(),
 });
 
@@ -84,8 +84,8 @@ export type TeamUserRelation = z.infer<typeof teamUserRelationSchema>;
 
 // Schéma pour la collection Admins_Organisations
 export const adminRelationSchema = z.object({
-    organisationID: z.string(),
-    userID: z.string(),
+    organisationId: z.string(),
+    userId: z.string(),
     niveauAccès: z.string(),
 });
 
@@ -98,7 +98,7 @@ export type AdminRelation = z.infer<typeof adminRelationSchema>;
 // const db = firestore();
 
 // export const addUser = async (user: User) => {
-//     // Valider les données avec Zod
+//     // ValIder les données avec Zod
 //     userSchema.parse(user);
 
 //     // Ajouter les données dans Firestore

@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, Outlet } from 'react-router-dom';
 
 const Dashboard = () => {
     const { user } = useAuth();
@@ -14,6 +14,9 @@ const Dashboard = () => {
             <Link to="/app/organisations">
                 <Button>Mes organisations</Button>
             </Link>
+            <div className="mt-4">
+                <Outlet />
+            </div>
         </div>
     );
 };

@@ -19,12 +19,14 @@ import ProtectedRoutes from './layouts.tsx/ProtectedRoutes';
 import PublicLayout from './layouts.tsx/PublicLayout';
 import {
     addOrganisationAction,
+    getUserOrganisations,
     loginAction,
     signupAction,
 } from './lib/authUtils';
 import { AuthProvider } from './context/AuthContext';
 import DashboardLayout from './layouts.tsx/DashboardLayout';
 import NewOrganisation from './routes/NewOrganisation';
+import Organisations from './routes/Organisations';
 
 const router = createBrowserRouter(
     createRoutesFromElements(
@@ -48,7 +50,7 @@ const router = createBrowserRouter(
             {/* Protected */}
             <Route path="/app" element={<ProtectedRoutes />}>
                 <Route element={<DashboardLayout />}>
-                    <Route index element={<Dashboard />} />
+                    <Route index element={<Dashboard />}></Route>
                     <Route path="feedbacks" element={<FeedbackList />}>
                         <Route path="create" element={<CreateFeedback />} />
                         <Route
@@ -64,7 +66,11 @@ const router = createBrowserRouter(
                     <Route path="profile" element={<UserProfile />} />
                     <Route
                         path="organisations"
-                        element={<div>Mes organisations</div>}
+                        element={<Organisations />}
+                        loader={getUserOrganisations}
+                        errorElement={
+                            <div>Impossible de charger vos organisations</div>
+                        }
                     />
                     <Route
                         path="add-organisation"
