@@ -1,4 +1,4 @@
-import { Await, useLoaderData } from 'react-router-dom';
+import { Await, useLoaderData, useNavigate } from 'react-router-dom';
 import {
     Organisation,
     UserOrganisationRelation,
@@ -16,6 +16,7 @@ interface LoaderType {
 
 const Organisations = () => {
     const { userOrganisations } = useLoaderData() as LoaderType;
+    const navigate = useNavigate();
 
     return (
         <React.Suspense fallback={<p>Loading package location...</p>}>
@@ -40,6 +41,9 @@ const Organisations = () => {
                                 <Card
                                     key={organisation.id}
                                     className="border rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300"
+                                    onClick={() =>
+                                        navigate(`${organisation.id}`)
+                                    }
                                 >
                                     <CardHeader className="flex flex-row gap-2 border-b">
                                         <Avatar>

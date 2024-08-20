@@ -1,5 +1,5 @@
 // src/utils/authUtils.ts
-import { ActionFunctionArgs, defer } from 'react-router-dom';
+import { ActionFunctionArgs, defer, json, redirect } from 'react-router-dom';
 import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
@@ -19,7 +19,16 @@ import {
     CreateOrganisationParams,
     CreateOrganisationResult,
 } from '../../functions/src/index';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import {
+    addDoc,
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    query,
+    serverTimestamp,
+    where,
+} from 'firebase/firestore';
 
 async function handleAuthAction(
     actionType: 'signIn' | 'signUp',
@@ -220,5 +229,90 @@ export async function getUserOrganisations() {
     } catch (error) {
         console.error('Error getting user organisations:', error);
         throw error; // Relancer l'erreur pour une gestion ultérieure
+    }
+}
+
+export async function getOrganisation({ params }) {
+    console.log('getOrganisations');
+    const docRef = doc(db, 'organisations', params.organisationId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        console.log('Document data:', docSnap.data());
+        console.log('Doc ID: ', docSnap.id);
+        return { ...docSnap.data(), id: docSnap.id };
+    } else {
+        // docSnap.data() will be undefined in this case
+        console.log('No such document!');
+        return null;
+    }
+}
+
+export async function addUserToOrganisation({ params, request }) {
+    const formData = await request.formData();
+    const newUserEmail = formData.get('email') as string;
+
+    console.log(newUserEmail);
+    console.log(params.organisationId);
+
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) {
+        console.error('User is not authenticated.');
+        return;
+    }
+
+    try {
+        // Récupérer l'ID de l'utilisateur à partir de l'adresse email
+        const userQuery = query(
+            collection(db, 'users'),
+            where('email', '==', newUserEmail)
+        );
+        const userSnapshot = await getDocs(userQuery);
+
+        if (userSnapshot.empty) {
+            console.error(`No user found with email: ${newUserEmail}`);
+            return;
+        }
+
+        const newUserId = userSnapshot.docs[0].id;
+        console.log(newUserId);
+
+        // Vérifier si la relation existe déjà
+        const relationQuery = query(
+            collection(db, 'userOrganisationRelation'),
+            where('userId', '==', newUserId),
+            where('organisationId', '==', params.organisationId)
+        );
+        const relationSnapshot = await getDocs(relationQuery);
+
+        if (!relationSnapshot.empty) {
+            return json(
+                {
+                    error: 'Cette personne est déjà inscrite',
+                    name: 'RelationExistsError',
+                },
+                { status: 400 }
+            );
+        }
+
+        // Ajouter le document dans la collection userOrganisationRelation
+        const userOrganisationRelationRef = await addDoc(
+            collection(db, 'userOrganisationRelation'),
+            {
+                userId: newUserId,
+                organisationId: params.organisationId,
+                isAdmin: false, // Vous pouvez rendre ceci dynamique selon les besoins
+                createdAt: serverTimestamp(),
+            }
+        );
+
+        console.log(
+            'User successfully added to organisation:',
+            userOrganisationRelationRef.id
+        );
+        return redirect(`/app/organisations/${params.organisationId}`);
+    } catch (error) {
+        console.error('Error calling function:', error);
     }
 }

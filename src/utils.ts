@@ -15,8 +15,11 @@ export const getLinkClassName = (path: string, exact = false) => {
 };
 
 export const getPageTitle = (pathname: string) => {
-    const path = pathname.replace('/app', '').split('/')[1] || '';
-    switch (path) {
+    const path = pathname.replace('/app', '').split('/');
+    const basePath = path[1] || '';
+    const subPath = path[2] || '';
+
+    switch (basePath) {
         case '':
             return 'Tableau de bord';
         case 'feedbacks':
@@ -24,9 +27,9 @@ export const getPageTitle = (pathname: string) => {
         case 'profile':
             return 'Mon profil';
         case 'organisations':
-            return 'Mes Organisations';
+            return subPath ? 'Organisation' : 'Mes Organisations';
         case 'add-organisation':
-            return 'Nouvelle Organisation';
+            return 'Créer une Organisation';
         default:
             return 'Page';
     }

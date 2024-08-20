@@ -19,6 +19,8 @@ import ProtectedRoutes from './layouts.tsx/ProtectedRoutes';
 import PublicLayout from './layouts.tsx/PublicLayout';
 import {
     addOrganisationAction,
+    addUserToOrganisation,
+    getOrganisation,
     getUserOrganisations,
     loginAction,
     signupAction,
@@ -27,6 +29,8 @@ import { AuthProvider } from './context/AuthContext';
 import DashboardLayout from './layouts.tsx/DashboardLayout';
 import NewOrganisation from './routes/NewOrganisation';
 import Organisations from './routes/Organisations';
+import Organisation from './routes/Organisation';
+import AddUser from './routes/AddUser';
 
 const router = createBrowserRouter(
     createRoutesFromElements(
@@ -70,6 +74,22 @@ const router = createBrowserRouter(
                         loader={getUserOrganisations}
                         errorElement={
                             <div>Impossible de charger vos organisations</div>
+                        }
+                    />
+                    <Route
+                        path="organisations/:organisationId"
+                        element={<Organisation />}
+                        loader={getOrganisation}
+                        errorElement={
+                            <div>Impossible de charger l' organisation</div>
+                        }
+                    />
+                    <Route
+                        path="organisations/:organisationId/addUser"
+                        element={<AddUser />}
+                        action={addUserToOrganisation}
+                        errorElement={
+                            <div>Impossible d'ajouter un utilisateur</div>
                         }
                     />
                     <Route
