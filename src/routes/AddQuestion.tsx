@@ -8,6 +8,7 @@ import {
     CardFooter,
 } from '@/components/ui/card';
 import { useActionData, useLocation, useNavigation } from 'react-router-dom';
+
 type ActionData = {
     success?: boolean;
     error?: string;
@@ -15,7 +16,8 @@ type ActionData = {
         titre?: string[];
     };
 };
-const CreateFeedback = () => {
+
+const AddQuestion = () => {
     const actionData = useActionData() as ActionData | undefined;
     const navigation = useNavigation();
 
@@ -26,26 +28,19 @@ const CreateFeedback = () => {
         <div className="flex items-center justify-center min-h-screen mt-4 mb-4">
             <Card className="w-[350px]">
                 <CardHeader className="text-2xl font-semibold">
-                    <CardTitle>Créer un feedback</CardTitle>
+                    <CardTitle>Ajouter une question</CardTitle>
                     <CardDescription>
-                        Une fois le questionnaire créé cous pourrez ajouter vos
-                        questions.
+                        Pour compléter votre feedback ajouter une question.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <AuthForm
-                        submitText="Créer le feedback"
+                        submitText="Ajouter la question"
                         fields={[
                             {
-                                name: 'titre',
-                                label: `Nom du feedback`,
-                                type: 'text',
-                            },
-                            {
-                                name: 'organisationId',
-                                label: '',
-                                type: 'hidden',
-                                value: state?.id || undefined,
+                                name: 'question',
+                                label: `Votre nouvelle question`,
+                                type: 'textarea',
                             },
                         ]}
                         isSubmitting={navigation.state === 'submitting'}
@@ -59,4 +54,4 @@ const CreateFeedback = () => {
     );
 };
 
-export default CreateFeedback;
+export default AddQuestion;

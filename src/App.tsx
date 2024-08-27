@@ -20,10 +20,17 @@ import PublicLayout from './layouts.tsx/PublicLayout';
 import {
     addOrganisationAction,
     addUserToOrganisation,
+    createFeedback,
+    createQuestion,
+    deleteQuestion,
+    getAllFeedbacks,
+    getAllQuestions,
     getOrganisation,
+    getQuestionById,
     getUserOrganisations,
     loginAction,
     signupAction,
+    updateQuestion,
 } from './lib/authUtils';
 import { AuthProvider } from './context/AuthContext';
 import DashboardLayout from './layouts.tsx/DashboardLayout';
@@ -31,6 +38,8 @@ import NewOrganisation from './routes/NewOrganisation';
 import Organisations from './routes/Organisations';
 import Organisation from './routes/Organisation';
 import AddUser from './routes/AddUser';
+import AddQuestion from './routes/AddQuestion';
+import EditQuestion from './routes/EditQuestion';
 
 const router = createBrowserRouter(
     createRoutesFromElements(
@@ -55,11 +64,46 @@ const router = createBrowserRouter(
             <Route path="/app" element={<ProtectedRoutes />}>
                 <Route element={<DashboardLayout />}>
                     <Route index element={<Dashboard />}></Route>
-                    <Route path="feedbacks" element={<FeedbackList />}>
-                        <Route path="create" element={<CreateFeedback />} />
+                    <Route path="feedbacks">
+                        <Route
+                            index
+                            element={<FeedbackList />}
+                            loader={getAllFeedbacks}
+                        ></Route>
+                        <Route
+                            path="create"
+                            element={<CreateFeedback />}
+                            action={createFeedback}
+                            errorElement={
+                                <div>Impossible de créer le feedback</div>
+                            }
+                        />
+                        <Route
+                            path="add-question/:campaignId"
+                            element={<AddQuestion />}
+                            action={createQuestion}
+                            errorElement={
+                                <div>Impossible de créer la question</div>
+                            }
+                        />
+                        <Route
+                            path="edit-question/:campaignId/:questionId"
+                            element={<EditQuestion />}
+                            loader={getQuestionById}
+                            action={updateQuestion}
+                            errorElement={
+                                <div>Impossible de modifier la question</div>
+                            }
+                        />
+                        <Route
+                            path="delete-question/:campaignId"
+                            action={deleteQuestion} // Fonction d'action pour la suppression
+                        />
+
                         <Route
                             path="view/:campaignId"
                             element={<ViewFeedback />}
+                            loader={getAllQuestions}
                         />
                         <Route path="report/:campaignId" element={<Report />} />
                         <Route

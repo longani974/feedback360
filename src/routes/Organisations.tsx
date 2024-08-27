@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import React from 'react';
+import { auth } from '@/firebase';
 
 export type OrganisationWithRelation = Organisation & UserOrganisationRelation;
 
@@ -18,6 +19,24 @@ const Organisations = () => {
     const { userOrganisations } = useLoaderData() as LoaderType;
     const navigate = useNavigate();
 
+    const handleOrganisationSelect = (
+        organisation: OrganisationWithRelation
+    ) => {
+        const userId = auth.currentUser?.uid;
+
+        if (userId) {
+            localStorage.setItem(
+                `${userId}_selectedOrganisationId`,
+                organisation.id
+            );
+            localStorage.setItem(
+                `${userId}_selectedOrganisationName`,
+                organisation.name
+            );
+        }
+
+        navigate('/app/feedbacks'); // Redirige vers la page des feedbacks après sélection
+    };
     return (
         <React.Suspense fallback={<p>Loading package location...</p>}>
             <Await
@@ -40,9 +59,9 @@ const Organisations = () => {
                             return (
                                 <Card
                                     key={organisation.id}
-                                    className="border rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300"
+                                    className="border rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300  cursor-pointer"
                                     onClick={() =>
-                                        navigate(`${organisation.id}`)
+                                        handleOrganisationSelect(organisation)
                                     }
                                 >
                                     <CardHeader className="flex flex-row gap-2 border-b">

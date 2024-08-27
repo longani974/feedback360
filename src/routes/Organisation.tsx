@@ -5,9 +5,14 @@ const Organisation = () => {
     const organisationData = useLoaderData();
 
     return (
-        <Link to="addUser" state={organisationData}>
-            <Button>Inviter des utilisateurs</Button>
-        </Link>
+        <div className="flex flex-col gap-2">
+            <Link to="addUser" state={organisationData}>
+                <Button>Inviter des utilisateurs</Button>
+            </Link>
+            <Link to="/app/feedbacks/create" state={organisationData}>
+                <Button>Créer un feedback</Button>
+            </Link>
+        </div>
     );
 };
 

@@ -7,45 +7,43 @@ import {
     CardContent,
     CardFooter,
 } from '@/components/ui/card';
-import { useActionData, useLocation, useNavigation } from 'react-router-dom';
+import { useActionData, useLoaderData, useNavigation } from 'react-router-dom';
+
 type ActionData = {
     success?: boolean;
     error?: string;
     errors?: {
-        titre?: string[];
+        question?: string[];
     };
 };
-const CreateFeedback = () => {
+
+type QuestionData = {
+    question: string;
+};
+
+const EditQuestion = () => {
     const actionData = useActionData() as ActionData | undefined;
     const navigation = useNavigation();
-
-    const { state } = useLocation();
-    console.log(state?.id || 'nope');
+    const { question } = useLoaderData() as QuestionData;
 
     return (
         <div className="flex items-center justify-center min-h-screen mt-4 mb-4">
             <Card className="w-[350px]">
                 <CardHeader className="text-2xl font-semibold">
-                    <CardTitle>Créer un feedback</CardTitle>
+                    <CardTitle>Modifier la question</CardTitle>
                     <CardDescription>
-                        Une fois le questionnaire créé cous pourrez ajouter vos
-                        questions.
+                        Modifiez votre question pour mettre à jour le feedback.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <AuthForm
-                        submitText="Créer le feedback"
+                        submitText="Mettre à jour la question"
                         fields={[
                             {
-                                name: 'titre',
-                                label: `Nom du feedback`,
-                                type: 'text',
-                            },
-                            {
-                                name: 'organisationId',
-                                label: '',
-                                type: 'hidden',
-                                value: state?.id || undefined,
+                                name: 'question',
+                                label: `Votre question`,
+                                type: 'textarea',
+                                defaultValue: question, // Pré-remplir avec la question actuelle
                             },
                         ]}
                         isSubmitting={navigation.state === 'submitting'}
@@ -59,4 +57,4 @@ const CreateFeedback = () => {
     );
 };
 
-export default CreateFeedback;
+export default EditQuestion;

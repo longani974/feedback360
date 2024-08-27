@@ -8,7 +8,12 @@ type FieldErrors = {
 
 type AuthFormProps = {
     submitText: string;
-    fields: { name: string; label: string; type: string }[];
+    fields: {
+        name: string;
+        label: string;
+        type: string;
+        value?: string | number | readonly string[] | undefined;
+    }[];
     isSubmitting: boolean;
     error?: string;
     fieldErrors?: FieldErrors; // Utilisation du type FieldErrors
@@ -30,6 +35,7 @@ export function AuthForm({
                         type={field.type}
                         id={field.name}
                         name={field.name}
+                        value={field.value}
                         required
                     />
                     {fieldErrors?.[field.name] && (

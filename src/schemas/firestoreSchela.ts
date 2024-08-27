@@ -20,7 +20,7 @@ export type Organisation = z.infer<typeof organisationSchema> & { id: string };
 export const questionnaireSchema = z.object({
     organisationId: z.string(),
     titre: z.string(),
-    dateCréation: z.string(), // ou z.date() si vous préférez travailler avec des objets Date
+    dateCréation: z.date(), // ou z.string() si vous préférez travailler avec des chaines de charactères
 });
 
 export type Questionnaire = z.infer<typeof questionnaireSchema>;
