@@ -44,7 +44,7 @@ const Feedbacks = () => {
 
     // Fonction pour gérer la redirection vers la sélection d'organisation
     const handleChangeOrganisation = () => {
-        navigate('/app/organisations');
+        navigate('/app/organisations', { state: { from: '/app/feedbacks' } });
     };
 
     // Fonction pour gérer l'ajout d'un nouveau feedback

@@ -33,6 +33,7 @@ import {
     getDocs,
     query,
     serverTimestamp,
+    setDoc,
     Timestamp,
     updateDoc,
     where,
@@ -303,8 +304,14 @@ export async function addUserToOrganisation({ params, request }) {
         }
 
         // Ajouter le document dans la collection userOrganisationRelation
-        const userOrganisationRelationRef = await addDoc(
-            collection(db, 'userOrganisationRelation'),
+
+        console.log(`${newUserId}_${params.organisationId}`);
+        const userOrganisationRelationRef = await setDoc(
+            doc(
+                db,
+                'userOrganisationRelation',
+                `${newUserId}_${params.organisationId}`
+            ), // Spécifie l'ID du document
             {
                 userId: newUserId,
                 organisationId: params.organisationId,
@@ -313,10 +320,7 @@ export async function addUserToOrganisation({ params, request }) {
             }
         );
 
-        console.log(
-            'User successfully added to organisation:',
-            userOrganisationRelationRef.id
-        );
+        console.log('User successfully added to organisation:');
         return redirect(`/app/organisations/${params.organisationId}`);
     } catch (error) {
         console.error('Error calling function:', error);
@@ -399,7 +403,7 @@ export async function getAllFeedbacks() {
         }
         // Récupérer l'ID de l'organisation depuis le Local Storage
         const organisationId = localStorage.getItem(
-            `${userId}_selectedOrganisationName`
+            `${userId}_selectedOrganisationId`
         );
 
         // Vérifiez si un ID d'organisation a été trouvé
@@ -414,7 +418,7 @@ export async function getAllFeedbacks() {
             collection(db, 'feedbacks'),
             where('organisationId', '==', organisationId)
         );
-
+        console.log(organisationId);
         const feedbacksSnapshot = await getDocs(feedbackQuery);
         const feedbacks = feedbacksSnapshot.docs.map((doc) => {
             const data = doc.data();

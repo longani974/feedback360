@@ -1,4 +1,9 @@
-import { Await, useLoaderData, useNavigate } from 'react-router-dom';
+import {
+    Await,
+    useLoaderData,
+    useLocation,
+    useNavigate,
+} from 'react-router-dom';
 import {
     Organisation,
     UserOrganisationRelation,
@@ -18,6 +23,7 @@ interface LoaderType {
 const Organisations = () => {
     const { userOrganisations } = useLoaderData() as LoaderType;
     const navigate = useNavigate();
+    const location = useLocation();
 
     const handleOrganisationSelect = (
         organisation: OrganisationWithRelation
@@ -35,8 +41,14 @@ const Organisations = () => {
             );
         }
 
-        navigate('/app/feedbacks'); // Redirige vers la page des feedbacks après sélection
+        const redirectPath =
+            location.state?.from === '/app/feedbacks'
+                ? '/app/feedbacks'
+                : `/app/organisations/${organisation.id}`;
+
+        navigate(redirectPath);
     };
+
     return (
         <React.Suspense fallback={<p>Loading package location...</p>}>
             <Await
@@ -46,20 +58,17 @@ const Organisations = () => {
                 <div className="container mx-auto py-8">
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                         {userOrganisations.map((organisation) => {
-                            console.log(organisation);
-
                             if (!organisation.id) {
-                                console.log('isAdmin' in organisation);
-
                                 console.error(
-                                    "Il y un problème avec les datas qui viennent de firestore. Il se pourrait qu'un userOrganisationRelation existe alors que organisations qui lui correspond n'existe pas."
+                                    'Données manquantes pour une organisation.',
+                                    organisation
                                 );
                                 return null;
                             }
                             return (
                                 <Card
                                     key={organisation.id}
-                                    className="border rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300  cursor-pointer"
+                                    className="border rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 cursor-pointer"
                                     onClick={() =>
                                         handleOrganisationSelect(organisation)
                                     }
@@ -69,7 +78,7 @@ const Organisations = () => {
                                             <AvatarImage
                                                 src={organisation?.image}
                                                 alt={organisation.name}
-                                                className="w-12 h-12 rounded-full "
+                                                className="w-12 h-12 rounded-full"
                                             />
                                             <AvatarFallback className="text-xl font-bold bg-blue-100">
                                                 {organisation?.name[0]?.toUpperCase()}
@@ -96,7 +105,7 @@ const Organisations = () => {
                             );
                         })}
                     </div>
-                </div>{' '}
+                </div>
             </Await>
         </React.Suspense>
     );

@@ -1,39 +1,73 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
     // Règles pour la collection Organisations
     match /organisations/{organisationId} {
+      // Permettre la création d'une organisation par tout utilisateur authentifié
+      allow create: if request.auth != null;
+      // Autoriser la lecture des organisations à tous les utilisateurs authentifiés
       allow read: if request.auth != null;
-      allow create: if request.auth != null && request.resource.data.nomOrganisation is string;
-      allow update, delete: if request.auth != null && isAdmin(request.auth.uid, organisationId);
+      // Autoriser la mise à jour et la suppression uniquement si l'utilisateur est le créateur ou admin
+      allow update, delete: if request.auth != null && (
+        resource.data.createBy == request.auth.uid || (
+          exists(/databases/$(database)/documents/userOrganisationRelation/$(request.auth.uid + '_' + organisationId)) &&
+          get(/databases/$(database)/documents/userOrganisationRelation/$(request.auth.uid + '_' + organisationId)).data.isAdmin == true
+        )
+      );
     }
 
     // Règles pour la collection Users
     match /users/{usersId} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null 
+      allow create: if request.auth != null;
     }
 
     // Règles pour la collection userOrganisationRelation
-    match /userOrganisationRelation/{documentId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null && request.resource.data.userId is string && request.resource.data.organisationId is string;
-      allow update, delete: if request.auth != null && request.auth.uid == request.resource.data.userId;
+   match /userOrganisationRelation/{relationId} {
+      // Autoriser la création de relations utilisateur-organisation
+      allow create, update, delete: if request.auth != null && (
+        // L'utilisateur est le créateur de l'organisation
+        exists(/databases/$(database)/documents/organisations/$(request.resource.data.organisationId)) &&
+        get(/databases/$(database)/documents/organisations/$(request.resource.data.organisationId)).data.createBy == request.auth.uid ||
+        
+        // L'utilisateur est admin dans l'organisation
+        exists(
+          /databases/$(database)/documents/userOrganisationRelation/$(request.auth.uid + '_' + request.resource.data.organisationId)
+        ) &&
+        get(/databases/$(database)/documents/userOrganisationRelation/$(request.auth.uid + '_' + request.resource.data.organisationId)).data.isAdmin == true
+      );
+      
+      // Autoriser la lecture uniquement aux utilisateurs concernés
+      allow read: if request.auth != null &&
+        (resource.data.userId == request.auth.uid || 
+         exists(/databases/$(database)/documents/userOrganisationRelation/$(request.auth.uid + '_' + resource.data.organisationId)) &&
+         get(/databases/$(database)/documents/userOrganisationRelation/$(request.auth.uid + '_' + resource.data.organisationId)).data.isAdmin == true);
     }
 
     // Règles pour la collection feedbacks
-    match /feedbacks/{documentId} {
+    match /feedbacks/{feedbackId} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null; 
-      allow update, delete: if request.auth != null; 
+      allow create: if request.auth != null && isAdminForFeedback(request.auth.uid, request.resource.data.organisationId);
+      allow update, delete: if request.auth != null && isAdminForFeedback(request.auth.uid, request.resource.data.organisationId);
+
+      // Règles pour la collection questions nested dans feedbacks
+      match /questions/{questionId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null && isAdminForFeedback(request.auth.uid, get(/databases/$(database)/documents/feedbacks/$(feedbackId)).data.organisationId);
+        allow update, delete: if request.auth != null && isAdminForFeedback(request.auth.uid, get(/databases/$(database)/documents/feedbacks/$(feedbackId)).data.organisationId);
+      }
     }
-    // Règles pour la collection questions nested dans feedbacks
-    match /feedbacks/{documentId}/questions/{questionId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null; 
-      allow update, delete: if request.auth != null; 
+    
+    // Fonction pour vérifier si l'utilisateur est admin pour une organisation donnée
+    function isAdmin(userId, organisationId) {
+      return exists(/databases/$(database)/documents/userOrganisationRelation/$(userId + '_' + organisationId))
+        && get(/databases/$(database)/documents/userOrganisationRelation/$(userId + '_' + organisationId)).data.isAdmin == true;
+    }
+
+    // Fonction pour vérifier si l'utilisateur est admin pour le feedback (en se basant sur l'organisation liée)
+    function isAdminForFeedback(userId, organisationId) {
+      return isAdmin(userId, organisationId);
     }
   }
 }
-

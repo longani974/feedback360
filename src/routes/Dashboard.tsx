@@ -11,7 +11,7 @@ const Dashboard = () => {
             <Link to="/app/add-organisation">
                 <Button>Ajouter une organisation</Button>
             </Link>
-            <Link to="/app/organisations">
+            <Link to="/app/organisations" state={{ from: '/app' }}>
                 <Button>Mes organisations</Button>
             </Link>
             <div className="mt-4">
