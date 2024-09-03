@@ -1,4 +1,8 @@
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import {
+    onCall,
+    HttpsError,
+    CallableRequest,
+} from 'firebase-functions/v2/https';
 // import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { beforeUserCreated } from 'firebase-functions/v2/identity';
 import * as admin from 'firebase-admin';
@@ -21,7 +25,7 @@ export interface CreateOrganisationResult {
 }
 
 admin.initializeApp();
-// const db = admin.firestore();
+const db = admin.firestore();
 
 // Fonction déclenchée à chaque création d'un utilisateur
 export const createUserDocument = beforeUserCreated(async (event) => {
@@ -120,6 +124,130 @@ export const createOrganisation = onCall(
         } catch (error) {
             console.error('Error creating organisation:', error);
             throw new HttpsError('internal', 'Error creating organisation.');
+        }
+    }
+);
+
+// export const compileResponses = onCall(
+//     async (request: CallableRequest): Promise<{ compiledResponses: any[] }> => {
+//         // Vérification de l'authentification de l'utilisateur
+//         if (!request.auth) {
+//             throw new HttpsError('unauthenticated', 'Authentication required!');
+//         }
+
+//         const feedbackId = request.data.feedbackId;
+
+//         if (!feedbackId) {
+//             throw new HttpsError(
+//                 'invalid-argument',
+//                 'Feedback ID is required!'
+//             );
+//         }
+
+//         try {
+//             // Récupérer toutes les réponses pour le feedback spécifique
+//             const responsesSnapshot = await db
+//                 .collection('responses')
+//                 .where('campaignId', '==', feedbackId)
+//                 .get();
+
+//             const compiledResponses: any[] = [];
+
+//             responsesSnapshot.forEach((doc) => {
+//                 const response = doc.data();
+//                 // Masquer l'ID utilisateur pour l'anonymat
+//                 delete response.userId;
+//                 compiledResponses.push(response);
+//             });
+
+//             return { compiledResponses };
+//         } catch (error) {
+//             console.error('Error compiling responses:', error);
+//             throw new HttpsError('internal', 'Error compiling responses.');
+//         }
+//     }
+// );
+
+export const compileResponses = onCall(
+    async (request: CallableRequest): Promise<{ questions: any[] }> => {
+        // Vérification de l'authentification de l'utilisateur
+        if (!request.auth) {
+            throw new HttpsError('unauthenticated', 'Authentication required!');
+        }
+
+        const feedbackId = request.data.feedbackId;
+
+        if (!feedbackId) {
+            throw new HttpsError(
+                'invalid-argument',
+                'Feedback ID is required!'
+            );
+        }
+
+        try {
+            // Récupérer toutes les questions pour le feedback spécifique
+            const questionsSnapshot = await db
+                .collection('feedbacks')
+                .doc(feedbackId)
+                .collection('questions')
+                .get();
+
+            // Créer un objet pour lier les IDs de questions aux textes des questions
+            const questionsMap: Record<string, string> = {};
+            questionsSnapshot.forEach((doc) => {
+                const questionData = doc.data();
+                // Assurez-vous que 'question' est le bon champ dans vos documents de questions
+                if (questionData.question) {
+                    questionsMap[doc.id] = questionData.question;
+                } else {
+                    console.warn(
+                        `Question text not found for question ID: ${doc.id}`
+                    );
+                }
+            });
+
+            // Récupérer toutes les réponses pour le feedback spécifique
+            const responsesSnapshot = await db
+                .collection('responses')
+                .where('campaignId', '==', feedbackId)
+                .get();
+
+            // Regrouper les réponses par question
+            const questionsWithResponses: Record<
+                string,
+                { questionText: string; responses: any[] }
+            > = {};
+
+            responsesSnapshot.forEach((doc) => {
+                const response = doc.data();
+                const questionId = response.questionId;
+                const questionText =
+                    questionsMap[questionId] || 'Question inconnue'; // Valeur par défaut si l'ID de question n'est pas trouvé
+
+                // Assurez-vous que le texte de la question et les réponses sont correctement stockés
+                if (!questionsWithResponses[questionId]) {
+                    questionsWithResponses[questionId] = {
+                        questionText,
+                        responses: [],
+                    };
+                }
+                // Ajouter la réponse à la question correspondante
+                questionsWithResponses[questionId].responses.push({
+                    responseText: response.responseText,
+                    updatedAt: response.updatedAt,
+                });
+
+                // Masquer l'ID utilisateur pour l'anonymat
+                delete response.userId;
+            });
+
+            // Convertir les objets en tableau pour la réponse
+            const questionsArray = Object.values(questionsWithResponses);
+
+            return { questions: questionsArray };
+        } catch (error) {
+            console.error('Error compiling responses:', error);
+            throw new HttpsError('internal', 'Error compiling responses.');
         }
     }
 );

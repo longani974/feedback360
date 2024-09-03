@@ -3,6 +3,7 @@ import {
     ActionFunctionArgs,
     defer,
     json,
+    LoaderFunctionArgs,
     redirect,
     useLocation,
 } from 'react-router-dom';
@@ -809,3 +810,29 @@ export async function addOrUpdateResponse({ params, request }) {
         };
     }
 }
+
+export const compiledResponsesLoader = async ({
+    params,
+}: LoaderFunctionArgs) => {
+    const campaignId = params.campaignId;
+
+    if (!campaignId) {
+        throw new Response('ID de la campagne non trouvé.', { status: 400 });
+    }
+
+    try {
+        const compileResponses = httpsCallable(functions, 'compileResponses');
+        const result = await compileResponses({ feedbackId: campaignId });
+        console.log(result.data);
+        return result.data;
+    } catch (err) {
+        console.error(
+            'Erreur lors de la récupération des réponses compilées:',
+            err
+        );
+        throw new Response(
+            'Erreur lors de la récupération des réponses compilées.',
+            { status: 500 }
+        );
+    }
+};

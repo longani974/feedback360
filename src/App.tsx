@@ -21,6 +21,7 @@ import {
     addOrganisationAction,
     addOrUpdateResponse,
     addUserToOrganisation,
+    compiledResponsesLoader,
     createFeedback,
     createQuestion,
     deleteQuestion,
@@ -111,7 +112,11 @@ const router = createBrowserRouter(
                             element={<ViewFeedback />}
                             loader={getAllQuestions}
                         />
-                        <Route path="report/:campaignId" element={<Report />} />
+                        <Route
+                            path="report/:campaignId"
+                            element={<Report />}
+                            loader={compiledResponsesLoader}
+                        />
                         <Route
                             path="answer/:campaignId"
                             element={<AnswerFeedback />}

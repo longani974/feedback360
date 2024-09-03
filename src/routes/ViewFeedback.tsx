@@ -10,6 +10,8 @@ import {
     TooltipProvider,
 } from '@/components/ui/tooltip';
 import { Timestamp } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/firebase'; // Assurez-vous que cela pointe vers votre config Firebase Functions
 
 interface Question {
     id: string;
@@ -31,7 +33,7 @@ const ViewFeedback = () => {
             responsesMap: Record<string, Response | null>;
             titre: string;
             endDate: Date;
-            startDate: Date; // Ajouter la date de début
+            startDate: Date;
         };
 
     const { campaignId } = useParams();
@@ -135,6 +137,32 @@ const ViewFeedback = () => {
             ...prev,
             [questionId]: text !== responsesMap[questionId]?.responseText,
         }));
+    };
+
+    // Nouvelle fonction pour déclencher la compilation des réponses
+    const handleCompileResponses = async () => {
+        if (!campaignId) {
+            console.error('ID de la campagne non trouvé.');
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            // Appel à la fonction cloud pour compiler les réponses
+            const compileResponses = httpsCallable(
+                functions,
+                'compileResponses'
+            );
+            const result = await compileResponses({ feedbackId: campaignId });
+            console.log('Compiled responses:', result.data);
+            alert('Les réponses ont été compilées avec succès!');
+        } catch (error) {
+            console.error('Error compiling responses:', error);
+            alert('Erreur lors de la compilation des réponses.');
+        }
+
+        setLoading(false);
     };
 
     // Convertir endDate et startDate si nécessaire
@@ -302,6 +330,17 @@ const ViewFeedback = () => {
                         <Link to={`/app/feedbacks/add-question/${campaignId}`}>
                             <Button>Ajouter une question</Button>
                         </Link>
+                    </div>
+                )}
+                {isPastEndDate && (
+                    <div>
+                        <div className="mt-10">
+                            <Link to={`/app/feedbacks/report/${campaignId}`}>
+                                <Button disabled={loading}>
+                                    Voir le rapport
+                                </Button>
+                            </Link>
+                        </div>
                     </div>
                 )}
             </div>
