@@ -8,13 +8,16 @@ import {
     CardFooter,
 } from '@/components/ui/card';
 import { useActionData, useLocation, useNavigation } from 'react-router-dom';
+
 type ActionData = {
     success?: boolean;
     error?: string;
     errors?: {
         titre?: string[];
+        endDate?: string[];
     };
 };
+
 const CreateFeedback = () => {
     const actionData = useActionData() as ActionData | undefined;
     const navigation = useNavigation();
@@ -28,7 +31,7 @@ const CreateFeedback = () => {
                 <CardHeader className="text-2xl font-semibold">
                     <CardTitle>Créer un feedback</CardTitle>
                     <CardDescription>
-                        Une fois le questionnaire créé cous pourrez ajouter vos
+                        Une fois le questionnaire créé, vous pourrez ajouter vos
                         questions.
                     </CardDescription>
                 </CardHeader>
@@ -40,6 +43,16 @@ const CreateFeedback = () => {
                                 name: 'titre',
                                 label: `Nom du feedback`,
                                 type: 'text',
+                            },
+                            {
+                                name: 'startDate',
+                                label: 'Date de début',
+                                type: 'date',
+                            },
+                            {
+                                name: 'endDate',
+                                label: 'Date de fin',
+                                type: 'date',
                             },
                             {
                                 name: 'organisationId',

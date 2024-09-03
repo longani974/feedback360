@@ -24,7 +24,7 @@ service cloud.firestore {
     }
 
     // Règles pour la collection userOrganisationRelation
-   match /userOrganisationRelation/{relationId} {
+    match /userOrganisationRelation/{relationId} {
       // Autoriser la création de relations utilisateur-organisation
       allow create, update, delete: if request.auth != null && (
         // L'utilisateur est le créateur de l'organisation
@@ -58,7 +58,25 @@ service cloud.firestore {
         allow update, delete: if request.auth != null && isAdminForFeedback(request.auth.uid, get(/databases/$(database)/documents/feedbacks/$(feedbackId)).data.organisationId);
       }
     }
-    
+
+
+    match /responses/{responseId} {
+      
+      // Autoriser la lecture seulement si l'utilisateur est authentifié
+      allow read: if true;
+
+      // Autoriser la création de réponses si l'utilisateur est authentifié et l'userId de la requête correspond à l'ID utilisateur authentifié
+      allow create: if true;
+
+      // Autoriser la mise à jour si l'utilisateur est authentifié et l'userId du document correspond à l'ID utilisateur authentifié
+      allow update: if true;
+
+      // Autoriser la suppression si l'utilisateur est authentifié et l'userId du document correspond à l'ID utilisateur authentifié
+      allow delete: if true;
+    }
+
+
+
     // Fonction pour vérifier si l'utilisateur est admin pour une organisation donnée
     function isAdmin(userId, organisationId) {
       return exists(/databases/$(database)/documents/userOrganisationRelation/$(userId + '_' + organisationId))
@@ -69,5 +87,6 @@ service cloud.firestore {
     function isAdminForFeedback(userId, organisationId) {
       return isAdmin(userId, organisationId);
     }
+
   }
 }

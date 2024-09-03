@@ -19,6 +19,7 @@ import ProtectedRoutes from './layouts.tsx/ProtectedRoutes';
 import PublicLayout from './layouts.tsx/PublicLayout';
 import {
     addOrganisationAction,
+    addOrUpdateResponse,
     addUserToOrganisation,
     createFeedback,
     createQuestion,
@@ -27,6 +28,7 @@ import {
     getAllQuestions,
     getOrganisation,
     getQuestionById,
+    getResponsesLoader,
     getUserOrganisations,
     loginAction,
     signupAction,
@@ -98,6 +100,10 @@ const router = createBrowserRouter(
                         <Route
                             path="delete-question/:campaignId"
                             action={deleteQuestion} // Fonction d'action pour la suppression
+                        />
+                        <Route
+                            path="add-response/:campaignId/:questionId"
+                            action={addOrUpdateResponse} // Fonction d'action pour ajouter ou mettre à jour une réponse
                         />
 
                         <Route

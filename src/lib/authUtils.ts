@@ -11,6 +11,7 @@ import {
     createUserWithEmailAndPassword,
     getAuth,
     onAuthStateChanged,
+    User,
 } from 'firebase/auth';
 import { auth, db } from '@/firebase';
 import { loginSchema, signupSchema } from './schemas';
@@ -28,6 +29,7 @@ import {
 import {
     addDoc,
     collection,
+    deleteDoc,
     doc,
     getDoc,
     getDocs,
@@ -338,29 +340,42 @@ export async function addUserToOrganisation({ params, request }) {
 // });
 
 // export type Questionnaire = z.infer<typeof questionnaireSchema>;
+
 export async function createFeedback({ params, request }) {
     const formData = await request.formData();
     const titre = formData.get('titre') as string;
     const organisationId = formData.get('organisationId') as string;
+    const startDateStr = formData.get('startDate') as string; // Ajout du champ date de début
+    const endDateStr = formData.get('endDate') as string;
 
-    console.log(titre, organisationId);
-    // la date de création via firebase serverTimestamp()
+    // Convertir les chaînes de date en objets Date
+    const startDate = startDateStr ? new Date(startDateStr) : null;
+    const endDate = endDateStr ? new Date(endDateStr) : null;
 
-    // créer un doc dans la collection questionnaires en suivant le questionnaireSchema
+    // Vérifier la validité des dates
+    if (startDate && isNaN(startDate.getTime())) {
+        return { status: 400, error: 'Date de début invalide' };
+    }
+    if (endDate && isNaN(endDate.getTime())) {
+        return { status: 400, error: 'Date de fin invalide' };
+    }
+
     try {
+        // Créer un document dans la collection feedbacks
         const feedbackRef = await addDoc(collection(db, 'feedbacks'), {
             organisationId,
             titre,
+            startDate, // Ajouter la date de début
+            endDate,
             createdAt: serverTimestamp(),
         });
+
         console.log(feedbackRef.id);
         return redirect(`/app/feedbacks/add-question/${feedbackRef.id}`);
     } catch (error) {
         console.log(error);
-        return { status: 400 };
+        return { status: 400, error: 'Erreur lors de la création du feedback' };
     }
-
-    // return redirection vers une page pour ajouter une question ou { status: 400 }
 }
 
 // Schéma pour la collection Questions
@@ -432,10 +447,199 @@ export async function getAllFeedbacks() {
     }
 }
 
-export async function getAllQuestions({ params }) {
-    const { campaignId } = params; // feedbackId est passé via les paramètres de route
-    console.log(campaignId);
+export async function getFeedbackDetails({ params }) {
     try {
+        const userId = auth.currentUser?.uid;
+        if (!userId) {
+            throw new Error("Vous n'êtes pas connecté.");
+        }
+
+        // Récupérer l'ID de l'organisation depuis le Local Storage
+        const organisationId = localStorage.getItem(
+            `${userId}_selectedOrganisationId`
+        );
+
+        // Vérifiez si un ID d'organisation a été trouvé
+        if (!organisationId) {
+            throw new Error(
+                'Aucune organisation sélectionnée. Veuillez sélectionner une organisation.'
+            );
+        }
+
+        const { feedbackId } = params;
+        if (!feedbackId) {
+            throw new Error('ID du feedback non trouvé.');
+        }
+
+        // Récupérer les détails du feedback
+        const feedbackDoc = await getDoc(doc(db, 'feedbacks', feedbackId));
+        if (!feedbackDoc.exists()) {
+            throw new Error('Feedback non trouvé.');
+        }
+        const feedbackData = feedbackDoc.data();
+
+        // Récupérer les questions liées à ce feedback
+        const questionsQuery = query(
+            collection(db, 'questions'),
+            where('feedbackId', '==', feedbackId)
+        );
+        const questionsSnapshot = await getDocs(questionsQuery);
+        const questions = questionsSnapshot.docs.map((doc) => {
+            return { ...doc.data(), id: doc.id };
+        });
+
+        // Récupérer les réponses liées aux questions
+        const responsesMap = {};
+        for (const question of questions) {
+            const responseQuery = query(
+                collection(db, 'responses'),
+                where('questionId', '==', question.id)
+            );
+            const responseSnapshot = await getDocs(responseQuery);
+            if (!responseSnapshot.empty) {
+                const responseData = responseSnapshot.docs[0].data();
+                responsesMap[question.id] = {
+                    ...responseData,
+                    id: responseSnapshot.docs[0].id,
+                };
+            } else {
+                responsesMap[question.id] = null;
+            }
+        }
+
+        // Retourner les données via un objet defer
+        return defer({
+            feedback: feedbackData,
+            questions,
+            responsesMap,
+        });
+    } catch (error) {
+        console.error(
+            'Erreur lors de la récupération des détails du feedback:',
+            error
+        );
+        return { status: 400 };
+    }
+}
+
+// export async function getAllQuestions({ params }) {
+//     const { campaignId } = params; // feedbackId est passé via les paramètres de route
+//     console.log(campaignId);
+//     try {
+//         const questionsRef = collection(
+//             db,
+//             'feedbacks',
+//             campaignId,
+//             'questions'
+//         );
+//         const questionsSnapshot = await getDocs(questionsRef);
+//         const questions = questionsSnapshot.docs.map((doc) => {
+//             return { ...doc.data(), id: doc.id };
+//         });
+
+//         return defer({ questions });
+//     } catch (error) {
+//         console.error('Erreur lors du chargement des questions:', error);
+//         return {
+//             status: 400,
+//             error: 'Erreur lors du chargement des questions',
+//         };
+//     }
+// }
+
+function waitForAuth(): Promise<User | null> {
+    return new Promise((resolve, reject) => {
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            unsubscribe(); // Ne pas oublier de se désabonner
+            resolve(user);
+        }, reject);
+    });
+}
+
+// export async function getAllQuestions({ params }) {
+//     const { campaignId } = params;
+//     // Attendre que l'utilisateur soit défini
+//     const user = await waitForAuth();
+
+//     if (!user) {
+//         return {
+//             redirect: '/login',
+//             error: 'Utilisateur non authentifié',
+//         };
+//     }
+
+//     const userId = user.uid;
+
+//     console.log(campaignId);
+//     try {
+//         // Récupération des questions
+//         const questionsRef = collection(
+//             db,
+//             'feedbacks',
+//             campaignId,
+//             'questions'
+//         );
+//         const questionsSnapshot = await getDocs(questionsRef);
+//         const questions = questionsSnapshot.docs.map((doc) => ({
+//             id: doc.id,
+//             ...doc.data(),
+//         }));
+
+//         // Récupération des réponses pour chaque question
+//         const responsesMap = {};
+//         for (const question of questions) {
+//             // Récupérer la réponse spécifique de l'utilisateur pour cette question
+//             const responseDocRef = doc(
+//                 db,
+//                 'responses',
+//                 `${userId}_${question.id}`
+//             );
+//             const responseDoc = await getDoc(responseDocRef);
+
+//             if (responseDoc.exists()) {
+//                 responsesMap[question.id] = {
+//                     id: responseDoc.id,
+//                     ...responseDoc.data(),
+//                 };
+//             } else {
+//                 responsesMap[question.id] = null; // Pas de réponse de cet utilisateur
+//             }
+//         }
+
+//         return { questions, responsesMap };
+//     } catch (error) {
+//         console.error('Erreur lors du chargement des questions:', error);
+//         return {
+//             status: 400,
+//             error: 'Erreur lors du chargement des questions',
+//         };
+//     }
+// }
+export async function getAllQuestions({ params }) {
+    const { campaignId } = params;
+    // Attendre que l'utilisateur soit défini
+    const user = await waitForAuth();
+
+    if (!user) {
+        return {
+            redirect: '/login',
+            error: 'Utilisateur non authentifié',
+        };
+    }
+
+    const userId = user.uid;
+
+    try {
+        // Récupération des informations du feedback
+        const feedbackDocRef = doc(db, 'feedbacks', campaignId);
+        const feedbackDoc = await getDoc(feedbackDocRef);
+        if (!feedbackDoc.exists()) {
+            throw new Error('Feedback non trouvé');
+        }
+        const feedbackData = feedbackDoc.data();
+        const { titre, endDate, startDate } = feedbackData;
+
+        // Récupération des questions
         const questionsRef = collection(
             db,
             'feedbacks',
@@ -443,11 +647,32 @@ export async function getAllQuestions({ params }) {
             'questions'
         );
         const questionsSnapshot = await getDocs(questionsRef);
-        const questions = questionsSnapshot.docs.map((doc) => {
-            return { ...doc.data(), id: doc.id };
-        });
+        const questions = questionsSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+        }));
 
-        return defer({ questions });
+        // Récupération des réponses pour chaque question
+        const responsesMap = {};
+        for (const question of questions) {
+            const responseDocRef = doc(
+                db,
+                'responses',
+                `${userId}_${question.id}`
+            );
+            const responseDoc = await getDoc(responseDocRef);
+
+            if (responseDoc.exists()) {
+                responsesMap[question.id] = {
+                    id: responseDoc.id,
+                    ...responseDoc.data(),
+                };
+            } else {
+                responsesMap[question.id] = null; // Pas de réponse de cet utilisateur
+            }
+        }
+
+        return { questions, responsesMap, titre, endDate, startDate };
     } catch (error) {
         console.error('Erreur lors du chargement des questions:', error);
         return {
@@ -456,6 +681,7 @@ export async function getAllQuestions({ params }) {
         };
     }
 }
+
 export function formatDate(date: string | Timestamp): string {
     if (typeof date === 'object' && 'toDate' in date) {
         // Si c'est un objet Timestamp, on le convertit en Date
@@ -514,10 +740,6 @@ export async function updateQuestion({ params, request }) {
     }
 }
 
-import { db } from '@/firebase'; // Assurez-vous d'importer votre instance Firebase
-import { doc, deleteDoc } from 'firebase/firestore';
-import { redirect } from 'react-router-dom';
-
 export async function deleteQuestion({ params, request }) {
     const { campaignId } = params;
     const formData = await request.formData();
@@ -536,5 +758,54 @@ export async function deleteQuestion({ params, request }) {
     } catch (error) {
         console.error('Erreur lors de la suppression de la question:', error);
         return { status: 500, message: 'Erreur serveur' };
+    }
+}
+
+// Fonction pour ajouter ou mettre à jour une réponse
+export async function addOrUpdateResponse({ params, request }) {
+    const { campaignId, questionId } = params; // ID de la campagne et de la question, fournis via les paramètres de la route
+    const formData = await request.formData();
+    const responseText = formData.get('responseText') as string; // Réponse saisie par l'utilisateur
+
+    // Authentifier l'utilisateur
+    const user = await waitForAuth();
+
+    if (!user) {
+        return {
+            redirect: '/login',
+            error: 'Utilisateur non authentifié',
+        };
+    }
+
+    const userId = user.uid;
+
+    // Référence au document de réponse
+    const responseDocRef = doc(db, 'responses', `${userId}_${questionId}`);
+
+    // Structure des données de réponse
+    const responseData = {
+        campaignId,
+        questionId,
+        userId,
+        responseText,
+        updatedAt: serverTimestamp(), // Ajoute un timestamp pour la mise à jour
+    };
+
+    try {
+        // Ajout ou mise à jour du document de réponse
+        await setDoc(responseDocRef, responseData, { merge: true });
+
+        // Redirection après ajout ou mise à jour de la réponse
+        return redirect(`/app/feedbacks/view/${campaignId}`);
+    } catch (error) {
+        console.error(
+            "Erreur lors de l'ajout ou de la mise à jour de la réponse:",
+            error
+        );
+        return {
+            status: 500,
+            message:
+                "Erreur lors de l'ajout ou de la mise à jour de la réponse",
+        };
     }
 }
