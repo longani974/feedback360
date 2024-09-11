@@ -29,7 +29,6 @@ import {
     getAllQuestions,
     getOrganisation,
     getQuestionById,
-    getResponsesLoader,
     getUserOrganisations,
     loginAction,
     signupAction,

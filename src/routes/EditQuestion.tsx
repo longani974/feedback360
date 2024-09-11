@@ -43,7 +43,7 @@ const EditQuestion = () => {
                                 name: 'question',
                                 label: `Votre question`,
                                 type: 'textarea',
-                                defaultValue: question, // Pré-remplir avec la question actuelle
+                                value: question, // Pré-remplir avec la question actuelle
                             },
                         ]}
                         isSubmitting={navigation.state === 'submitting'}

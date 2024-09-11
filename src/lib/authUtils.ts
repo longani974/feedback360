@@ -4,8 +4,8 @@ import {
     defer,
     json,
     LoaderFunctionArgs,
+    Params,
     redirect,
-    useLocation,
 } from 'react-router-dom';
 import {
     signInWithEmailAndPassword,
@@ -45,8 +45,7 @@ import {
 async function handleAuthAction(
     actionType: 'signIn' | 'signUp',
     email: string,
-    password: string,
-    name?: string
+    password: string
 ) {
     try {
         if (actionType === 'signIn') {
@@ -86,14 +85,13 @@ export async function signupAction({ request }: ActionFunctionArgs) {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
     const confirmPassword = formData.get('confirmPassword') as string;
-    const name = formData.get('name') as string;
 
     const result = signupSchema.safeParse({ email, password, confirmPassword });
     if (!result.success) {
         return { errors: result.error.flatten().fieldErrors };
     }
 
-    return await handleAuthAction('signUp', email, password, name);
+    return await handleAuthAction('signUp', email, password);
 }
 const functions = getFunctions();
 const createOrganisation = httpsCallable<
@@ -245,9 +243,12 @@ export async function getUserOrganisations() {
     }
 }
 
-export async function getOrganisation({ params }) {
-    console.log('getOrganisations');
-    const docRef = doc(db, 'organisations', params.organisationId);
+export async function getOrganisation({ params }: { params: Params<string> }) {
+    const { organisationId } = params;
+    if (!organisationId) {
+        throw new Error("L'ID de l'organisation est manquant.");
+    }
+    const docRef = doc(db, 'organisations', organisationId);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
         console.log('Document data:', docSnap.data());
@@ -260,7 +261,13 @@ export async function getOrganisation({ params }) {
     }
 }
 
-export async function addUserToOrganisation({ params, request }) {
+export async function addUserToOrganisation({
+    params,
+    request,
+}: {
+    params: Params<string>;
+    request: Request;
+}) {
     const formData = await request.formData();
     const newUserEmail = formData.get('email') as string;
 
@@ -309,7 +316,7 @@ export async function addUserToOrganisation({ params, request }) {
         // Ajouter le document dans la collection userOrganisationRelation
 
         console.log(`${newUserId}_${params.organisationId}`);
-        const userOrganisationRelationRef = await setDoc(
+        await setDoc(
             doc(
                 db,
                 'userOrganisationRelation',
@@ -342,7 +349,11 @@ export async function addUserToOrganisation({ params, request }) {
 
 // export type Questionnaire = z.infer<typeof questionnaireSchema>;
 
-export async function createFeedback({ params, request }) {
+export async function createFeedback({
+    request,
+}: {
+    request: { formData: () => Promise<FormData> };
+}) {
     const formData = await request.formData();
     const titre = formData.get('titre') as string;
     const organisationId = formData.get('organisationId') as string;
@@ -388,10 +399,20 @@ export async function createFeedback({ params, request }) {
 // });
 
 // export type Question = z.infer<typeof questionSchema>;
-export async function createQuestion({ params, request }) {
+export async function createQuestion({
+    params,
+    request,
+}: {
+    params: Params<string>;
+    request: Request;
+}) {
     const feedbackId = params.campaignId;
     const formData = await request.formData();
     const question = formData.get('question') as string;
+
+    if (!feedbackId) {
+        throw new Error("L'ID du feedback est manquant.");
+    }
 
     try {
         const questionRef = await addDoc(
@@ -448,7 +469,17 @@ export async function getAllFeedbacks() {
     }
 }
 
-export async function getFeedbackDetails({ params }) {
+interface ResponseMap {
+    [key: string]: {
+        id: string;
+        [key: string]: unknown;
+    } | null;
+}
+export async function getFeedbackDetails({
+    params,
+}: {
+    params: { feedbackId: string };
+}) {
     try {
         const userId = auth.currentUser?.uid;
         if (!userId) {
@@ -490,7 +521,7 @@ export async function getFeedbackDetails({ params }) {
         });
 
         // Récupérer les réponses liées aux questions
-        const responsesMap = {};
+        const responsesMap: ResponseMap = {};
         for (const question of questions) {
             const responseQuery = query(
                 collection(db, 'responses'),
@@ -616,9 +647,11 @@ function waitForAuth(): Promise<User | null> {
 //         };
 //     }
 // }
-export async function getAllQuestions({ params }) {
+export async function getAllQuestions({ params }: { params: Params<string> }) {
     const { campaignId } = params;
-    // Attendre que l'utilisateur soit défini
+    if (!campaignId) {
+        throw new Error("L'ID de la campagne est manquant.");
+    } // Attendre que l'utilisateur soit défini
     const user = await waitForAuth();
 
     if (!user) {
@@ -654,7 +687,7 @@ export async function getAllQuestions({ params }) {
         }));
 
         // Récupération des réponses pour chaque question
-        const responsesMap = {};
+        const responsesMap: ResponseMap = {};
         for (const question of questions) {
             const responseDocRef = doc(
                 db,
@@ -692,8 +725,12 @@ export function formatDate(date: string | Timestamp): string {
     return new Date(date).toLocaleDateString();
 }
 
-export async function getQuestionById({ params }) {
+export async function getQuestionById({ params }: { params: Params<string> }) {
     const { campaignId, questionId } = params;
+
+    if (!campaignId || !questionId) {
+        throw new Error("L'ID de la campagne ou de la question est manquant.");
+    }
 
     try {
         const questionRef = doc(
@@ -716,8 +753,19 @@ export async function getQuestionById({ params }) {
     }
 }
 
-export async function updateQuestion({ params, request }) {
+export async function updateQuestion({
+    params,
+    request,
+}: {
+    params: Params<string>;
+    request: Request;
+}) {
     const { campaignId, questionId } = params;
+
+    if (!campaignId || !questionId) {
+        throw new Error("L'ID de la campagne ou de la question est manquant.");
+    }
+
     const formData = await request.formData();
     const updatedQuestion = formData.get('question') as string;
 
@@ -741,12 +789,19 @@ export async function updateQuestion({ params, request }) {
     }
 }
 
-export async function deleteQuestion({ params, request }) {
+export async function deleteQuestion({
+    params,
+    request,
+}: {
+    params: Params<string>;
+    request: Request;
+}) {
     const { campaignId } = params;
     const formData = await request.formData();
     const questionId = formData.get('questionId');
 
-    if (!campaignId || !questionId) {
+    // Ensure questionId is a string
+    if (typeof questionId !== 'string' || !campaignId || !questionId) {
         return { status: 400, message: 'Invalid request' };
     }
 
@@ -763,7 +818,13 @@ export async function deleteQuestion({ params, request }) {
 }
 
 // Fonction pour ajouter ou mettre à jour une réponse
-export async function addOrUpdateResponse({ params, request }) {
+export async function addOrUpdateResponse({
+    params,
+    request,
+}: {
+    params: Params<string>;
+    request: Request;
+}) {
     const { campaignId, questionId } = params; // ID de la campagne et de la question, fournis via les paramètres de la route
     const formData = await request.formData();
     const responseText = formData.get('responseText') as string; // Réponse saisie par l'utilisateur

@@ -8,12 +8,7 @@ import {
     CardFooter,
 } from '@/components/ui/card';
 import { useEffect } from 'react';
-import {
-    useActionData,
-    useLocation,
-    useNavigate,
-    useNavigation,
-} from 'react-router-dom';
+import { useActionData, useNavigate, useNavigation } from 'react-router-dom';
 
 type ActionData = {
     success?: boolean;
@@ -24,7 +19,6 @@ type ActionData = {
 };
 
 const AddUser = () => {
-    const location = useLocation();
     const actionData = useActionData() as ActionData | undefined;
     const navigation = useNavigation();
     const navigate = useNavigate();

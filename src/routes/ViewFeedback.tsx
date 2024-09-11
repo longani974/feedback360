@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/authUtils';
 import { Link, useLoaderData, useParams, useFetcher } from 'react-router-dom';
@@ -23,7 +23,7 @@ interface Response {
     id: string;
     responseText: string;
     userId: string;
-    updatedAt: any;
+    updatedAt: unknown;
 }
 
 const ViewFeedback = () => {
@@ -140,7 +140,7 @@ const ViewFeedback = () => {
     };
 
     // Nouvelle fonction pour déclencher la compilation des réponses
-    const handleCompileResponses = async () => {
+    async () => {
         if (!campaignId) {
             console.error('ID de la campagne non trouvé.');
             return;
@@ -184,9 +184,11 @@ const ViewFeedback = () => {
             <div className="container mx-auto py-8">
                 <h1 className="text-2xl font-semibold mb-4">{titre}</h1>
                 <p className="text-lg mb-4">
+                    {/* @ts-expect-error : formatDate(startDateAsDate) timestamp ou date bloc */}
                     Date de début: {formatDate(startDateAsDate)}
                 </p>
                 <p className="text-lg mb-4">
+                    {/* @ts-expect-error : formatDate(startDateAsDate) timestamp ou date bloc */}
                     Date de fin: {formatDate(endDateAsDate)}
                 </p>
                 <div className="space-y-4">

@@ -113,9 +113,9 @@ const Organisations = () => {
                                             <CardHeader className="flex flex-row gap-2 items-center border-b p-4">
                                                 <Avatar>
                                                     <AvatarImage
-                                                        src={
-                                                            organisation?.image
-                                                        }
+                                                        // src={
+                                                        //     organisation?.image
+                                                        // }
                                                         alt={organisation.name}
                                                         className="w-12 h-12 rounded-full"
                                                     />
