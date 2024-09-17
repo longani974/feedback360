@@ -119,11 +119,192 @@ export const createOrganisation = onCall(
                 createdAt: FieldValue.serverTimestamp(),
             });
 
+            // Créez une transaction de crédits dans la sous-collection 'credits'
+            const creditsRef = organisationRef.collection('credits').doc(); // Génère automatiquement un ID pour chaque transaction de crédit
+            await creditsRef.set({
+                transactionType: 'initial', // Type de transaction "initial"
+                creditsAdded: 100, // Attribution de 100 crédits
+                createdAt: FieldValue.serverTimestamp(),
+                createdBy: userId,
+            });
+
+            // Créez une transaction de crédits dans la sous-collection 'credits'
+            const currentCreditsRef = organisationRef
+                .collection('credits')
+                .doc('currentCredits');
+            await currentCreditsRef.set({
+                amount: 100, // Solde initial de crédits
+                lastUpdated: FieldValue.serverTimestamp(),
+            });
+
             // Retournez le résultat avec l'ID de l'organisation
             return { success: true, organisationId: organisationRef.id };
         } catch (error) {
             console.error('Error creating organisation:', error);
             throw new HttpsError('internal', 'Error creating organisation.');
+        }
+    }
+);
+
+type PurchaseCreditsResult = {
+    success: boolean;
+};
+
+export const purchaseCredits = onCall(
+    async (request): Promise<PurchaseCreditsResult> => {
+        if (!request.auth) {
+            throw new HttpsError('unauthenticated', 'Authentication required!');
+        }
+
+        const { organisationId, creditsPurchased } = request.data;
+        const userId = request.auth.uid;
+
+        if (!request.auth || !organisationId || !creditsPurchased) {
+            throw new HttpsError('invalid-argument', 'Invalid input data!');
+        }
+
+        try {
+            // Vérifiez que l'utilisateur est admin de l'organisation
+            const organisationRef = admin
+                .firestore()
+                .collection('organisations')
+                .doc(organisationId);
+            const organisationDoc = await organisationRef.get();
+            if (!organisationDoc.exists || !organisationDoc.data()) {
+                throw new HttpsError('not-found', 'Organization not found.');
+            }
+            // Vérifie que l'utilisateur qui fait la demande est bien le créateur de l'organisation
+            if (organisationDoc.data()?.createBy !== userId) {
+                throw new HttpsError(
+                    'permission-denied',
+                    'You do not have permission to modify credits for this organization.'
+                );
+            }
+
+            // Ajoutez une nouvelle transaction de crédits dans la sous-collection 'credits'
+            const creditsRef = organisationRef.collection('credits').doc(); // Nouveau document pour cette transaction
+            await creditsRef.set({
+                transactionType: 'purchase', // Type de transaction "purchase"
+                creditsAdded: creditsPurchased, // Crédits achetés
+                createdAt: FieldValue.serverTimestamp(),
+                createdBy: userId,
+            });
+
+            // Récupérer le document currentCredits
+            const currentCreditsRef = organisationRef
+                .collection('credits')
+                .doc('currentCredits');
+            const currentCreditsDoc = await currentCreditsRef.get();
+
+            // S'il n'existe pas encore, l'initialiser avec 0
+            let currentAmount = currentCreditsDoc.exists
+                ? currentCreditsDoc.data()?.amount
+                : 0;
+
+            // Mettre à jour le solde avec les crédits achetés
+            currentAmount += creditsPurchased;
+            await creditsRef.update({
+                amount: currentAmount,
+                lastUpdated: FieldValue.serverTimestamp(),
+            });
+
+            return { success: true };
+        } catch (error) {
+            console.error('Error purchasing credits:', error);
+            throw new HttpsError('internal', 'Error purchasing credits.');
+        }
+    }
+);
+
+export const createFeedbackWithCredits = onCall(
+    async (
+        request: CallableRequest
+    ): Promise<{ success: boolean; feedbackId?: string; error?: string }> => {
+        if (!request.auth) {
+            return { success: false, error: 'Authentication required!' };
+        }
+
+        const { organisationId, titre, startDate, endDate } = request.data;
+        const userId = request.auth.uid;
+        const creditsNeeded = 10;
+
+        if (!organisationId || !titre) {
+            return { success: false, error: 'Invalid input data!' };
+        }
+
+        try {
+            const result = await admin
+                .firestore()
+                .runTransaction(async (transaction) => {
+                    // Récupérer l'organisation
+                    const organisationRef = admin
+                        .firestore()
+                        .collection('organisations')
+                        .doc(organisationId);
+                    const organisationDoc =
+                        await transaction.get(organisationRef);
+
+                    if (!organisationDoc.exists) {
+                        throw new HttpsError(
+                            'not-found',
+                            'Organization not found.'
+                        );
+                    }
+
+                    // Vérifier que l'utilisateur est autorisé à créer un feedback
+                    if (organisationDoc.data()?.createBy !== userId) {
+                        throw new HttpsError(
+                            'permission-denied',
+                            'You do not have permission to create feedbacks for this organization.'
+                        );
+                    }
+
+                    // Vérifier et déduire les crédits
+                    const creditsRef = organisationRef
+                        .collection('credits')
+                        .doc('currentCredits');
+                    const creditsDoc = await transaction.get(creditsRef);
+
+                    if (
+                        !creditsDoc.exists ||
+                        creditsDoc.data()?.amount < creditsNeeded
+                    ) {
+                        throw new HttpsError(
+                            'failed-precondition',
+                            'Not enough credits to create feedback.'
+                        );
+                    }
+
+                    // Déduire les crédits
+                    const newCreditAmount =
+                        creditsDoc.data()!.amount - creditsNeeded;
+                    transaction.update(creditsRef, { amount: newCreditAmount });
+
+                    // Créer le feedback
+                    const feedbackRef = admin
+                        .firestore()
+                        .collection('feedbacks')
+                        .doc();
+
+                    transaction.set(feedbackRef, {
+                        organisationId,
+                        titre,
+                        startDate,
+                        endDate,
+                        createdAt: FieldValue.serverTimestamp(),
+                    });
+
+                    return feedbackRef.id;
+                });
+
+            return { success: true, feedbackId: result };
+        } catch (error) {
+            console.error('Error during feedback creation:', error);
+
+            // Gestion sécurisée de l'erreur
+            const errorMessage =
+                (error as Error).message || 'Internal server error';
+            return { success: false, error: errorMessage };
         }
     }
 );

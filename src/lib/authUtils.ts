@@ -349,6 +349,8 @@ export async function addUserToOrganisation({
 
 // export type Questionnaire = z.infer<typeof questionnaireSchema>;
 
+// Définis un type pour le retour de la fonction callable
+
 export async function createFeedback({
     request,
 }: {
@@ -357,14 +359,12 @@ export async function createFeedback({
     const formData = await request.formData();
     const titre = formData.get('titre') as string;
     const organisationId = formData.get('organisationId') as string;
-    const startDateStr = formData.get('startDate') as string; // Ajout du champ date de début
+    const startDateStr = formData.get('startDate') as string;
     const endDateStr = formData.get('endDate') as string;
 
-    // Convertir les chaînes de date en objets Date
     const startDate = startDateStr ? new Date(startDateStr) : null;
     const endDate = endDateStr ? new Date(endDateStr) : null;
 
-    // Vérifier la validité des dates
     if (startDate && isNaN(startDate.getTime())) {
         return { status: 400, error: 'Date de début invalide' };
     }
@@ -373,22 +373,84 @@ export async function createFeedback({
     }
 
     try {
-        // Créer un document dans la collection feedbacks
-        const feedbackRef = await addDoc(collection(db, 'feedbacks'), {
+        const functions = getFunctions();
+        const createFeedbackWithCredits = httpsCallable<
+            {
+                organisationId: string;
+                titre: string;
+                startDate: Date | null;
+                endDate: Date | null;
+            },
+            { success: boolean; feedbackId?: string; error?: string }
+        >(functions, 'createFeedbackWithCredits');
+
+        // Appelle la fonction Cloud pour créer le feedback avec des crédits
+        console.log(organisationId, titre, startDate, endDate);
+        const result = await createFeedbackWithCredits({
             organisationId,
             titre,
-            startDate, // Ajouter la date de début
+            startDate,
             endDate,
-            createdAt: serverTimestamp(),
         });
-
-        console.log(feedbackRef.id);
-        return redirect(`/app/feedbacks/add-question/${feedbackRef.id}`);
+        // Vérifie le succès et les erreurs
+        if (result.data.success) {
+            return redirect(
+                `/app/feedbacks/add-question/${result.data.feedbackId}`
+            );
+        } else {
+            return {
+                status: 400,
+                error:
+                    result.data.error ||
+                    'Erreur lors de la création du feedback hfg',
+            };
+        }
     } catch (error) {
         console.log(error);
         return { status: 400, error: 'Erreur lors de la création du feedback' };
     }
 }
+
+// export async function createFeedback({
+//     request,
+// }: {
+//     request: { formData: () => Promise<FormData> };
+// }) {
+//     const formData = await request.formData();
+//     const titre = formData.get('titre') as string;
+//     const organisationId = formData.get('organisationId') as string;
+//     const startDateStr = formData.get('startDate') as string; // Ajout du champ date de début
+//     const endDateStr = formData.get('endDate') as string;
+
+//     // Convertir les chaînes de date en objets Date
+//     const startDate = startDateStr ? new Date(startDateStr) : null;
+//     const endDate = endDateStr ? new Date(endDateStr) : null;
+
+//     // Vérifier la validité des dates
+//     if (startDate && isNaN(startDate.getTime())) {
+//         return { status: 400, error: 'Date de début invalide' };
+//     }
+//     if (endDate && isNaN(endDate.getTime())) {
+//         return { status: 400, error: 'Date de fin invalide' };
+//     }
+
+//     try {
+//         // Créer un document dans la collection feedbacks
+//         const feedbackRef = await addDoc(collection(db, 'feedbacks'), {
+//             organisationId,
+//             titre,
+//             startDate, // Ajouter la date de début
+//             endDate,
+//             createdAt: serverTimestamp(),
+//         });
+
+//         console.log(feedbackRef.id);
+//         return redirect(`/app/feedbacks/add-question/${feedbackRef.id}`);
+//     } catch (error) {
+//         console.log(error);
+//         return { status: 400, error: 'Erreur lors de la création du feedback' };
+//     }
+// }
 
 // Schéma pour la collection Questions
 // export const questionSchema = z.object({

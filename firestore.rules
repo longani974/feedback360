@@ -15,6 +15,15 @@ service cloud.firestore {
           get(/databases/$(database)/documents/userOrganisationRelation/$(request.auth.uid + '_' + organisationId)).data.isAdmin == true
         )
       );
+
+            // Sous-collection "credits" pour une entreprise
+      match /credits/{creditId} {
+        // Lecture des crédits autorisée pour tout utilisateur authentifié
+        allow read: if request.auth != null;
+
+        // Interdiction de toute modification directe par le client
+        allow write, update, delete: if false;
+      }
     }
 
     // Règles pour la collection Users
