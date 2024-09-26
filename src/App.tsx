@@ -21,6 +21,7 @@ import {
     addOrganisationAction,
     addOrUpdateResponse,
     addUserToOrganisation,
+    checkoutSuccess,
     compiledResponsesLoader,
     createFeedback,
     createQuestion,
@@ -42,6 +43,7 @@ import Organisation from './routes/Organisation';
 import AddUser from './routes/AddUser';
 import AddQuestion from './routes/AddQuestion';
 import EditQuestion from './routes/EditQuestion';
+import CheckoutSuccess from './routes/CheckoutSuccess';
 
 const router = createBrowserRouter(
     createRoutesFromElements(
@@ -66,6 +68,12 @@ const router = createBrowserRouter(
             <Route path="/app" element={<ProtectedRoutes />}>
                 <Route element={<DashboardLayout />}>
                     <Route index element={<Dashboard />}></Route>
+                    <Route
+                        path="checkout/success"
+                        element={<CheckoutSuccess />}
+                        loader={checkoutSuccess}
+                        errorElement={<div>Impossible d'afficher checkout</div>}
+                    />
                     <Route path="feedbacks">
                         <Route
                             index

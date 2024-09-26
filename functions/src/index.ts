@@ -8,6 +8,8 @@ import { beforeUserCreated } from 'firebase-functions/v2/identity';
 import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 // import { onDocumentCreatedWithAuthContext } from 'firebase-functions/v2/firestore';
+import * as functions from 'firebase-functions';
+import Stripe from 'stripe';
 
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
@@ -27,7 +29,6 @@ export interface CreateOrganisationResult {
 admin.initializeApp();
 const db = admin.firestore();
 
-// Fonction déclenchée à chaque création d'un utilisateur
 export const createUserDocument = beforeUserCreated(async (event) => {
     const user = event.data;
     const userId = user.uid;
@@ -233,9 +234,21 @@ export const createFeedbackWithCredits = onCall(
         }
 
         try {
-            const result = await admin
-                .firestore()
-                .runTransaction(async (transaction) => {
+            const result = await admin.firestore().runTransaction(
+                async (transaction: {
+                    get: (arg0: any) => any;
+                    update: (arg0: any, arg1: { amount: number }) => void;
+                    set: (
+                        arg0: any,
+                        arg1: {
+                            organisationId: any;
+                            titre: any;
+                            startDate: any;
+                            endDate: any;
+                            createdAt: admin.firestore.FieldValue;
+                        }
+                    ) => void;
+                }) => {
                     // Récupérer l'organisation
                     const organisationRef = admin
                         .firestore()
@@ -278,7 +291,9 @@ export const createFeedbackWithCredits = onCall(
                     // Déduire les crédits
                     const newCreditAmount =
                         creditsDoc.data()!.amount - creditsNeeded;
-                    transaction.update(creditsRef, { amount: newCreditAmount });
+                    transaction.update(creditsRef, {
+                        amount: newCreditAmount,
+                    });
 
                     // Créer le feedback
                     const feedbackRef = admin
@@ -295,7 +310,8 @@ export const createFeedbackWithCredits = onCall(
                     });
 
                     return feedbackRef.id;
-                });
+                }
+            );
 
             return { success: true, feedbackId: result };
         } catch (error) {
@@ -375,17 +391,19 @@ export const compileResponses = onCall(
 
             // Créer un objet pour lier les IDs de questions aux textes des questions
             const questionsMap: Record<string, string> = {};
-            questionsSnapshot.forEach((doc) => {
-                const questionData = doc.data();
-                // Assurez-vous que 'question' est le bon champ dans vos documents de questions
-                if (questionData.question) {
-                    questionsMap[doc.id] = questionData.question;
-                } else {
-                    console.warn(
-                        `Question text not found for question ID: ${doc.id}`
-                    );
+            questionsSnapshot.forEach(
+                (doc: { data: () => any; id: string | number }) => {
+                    const questionData = doc.data();
+                    // Assurez-vous que 'question' est le bon champ dans vos documents de questions
+                    if (questionData.question) {
+                        questionsMap[doc.id] = questionData.question;
+                    } else {
+                        console.warn(
+                            `Question text not found for question ID: ${doc.id}`
+                        );
+                    }
                 }
-            });
+            );
 
             // Récupérer toutes les réponses pour le feedback spécifique
             const responsesSnapshot = await db
@@ -399,7 +417,7 @@ export const compileResponses = onCall(
                 { questionText: string; responses: any[] }
             > = {};
 
-            responsesSnapshot.forEach((doc) => {
+            responsesSnapshot.forEach((doc: { data: () => any }) => {
                 const response = doc.data();
                 const questionId = response.questionId;
                 const questionText =
@@ -430,5 +448,148 @@ export const compileResponses = onCall(
             console.error('Error compiling responses:', error);
             throw new HttpsError('internal', 'Error compiling responses.');
         }
+    }
+);
+
+export const handleStripeWebhook = functions.https.onRequest(
+    async (req, res) => {
+        const stripe = new Stripe(functions.config().stripe.secret);
+        const endpointSecret = functions.config().stripe.webhook_secret;
+        const sig = req.headers['stripe-signature'] as string;
+        let event: Stripe.Event;
+        console.log('handleStripeWebhook processing');
+        try {
+            // Construct the Stripe event from the raw request body and signature
+            event = stripe.webhooks.constructEvent(
+                req.rawBody,
+                sig,
+                endpointSecret
+            );
+        } catch (err) {
+            if (err instanceof Error) {
+                console.error(`Webhook Error: ${err.message}`);
+                res.status(400).send(`Webhook Error: ${err.message}`);
+            } else {
+                console.error('Webhook Error: Unknown error');
+                res.status(400).send('Webhook Error: Unknown error');
+            }
+            return; // Assurez-vous de retourner après avoir envoyé la réponse
+        }
+        if (event.type === 'payment_intent.succeeded') {
+            // on n'utilise pas checkout.session.completed car avec l'exenttion stripe dans firebase les metadata ne passent pas. Par contre on les reçoit bien avec payment_intent.succeeded
+            const session = event.data.object;
+            // Log the session for debugging
+            console.log('payment_intent succeeded:', session);
+            try {
+                // Extraire l'identifiant de l'organisation des metadata de la session
+                // const organisationId = session.metadata?.organisationId;
+                const { organisationId, userId } = session.metadata;
+                if (!organisationId) {
+                    throw new Error(
+                        'organisationId is missing in session metadata'
+                    );
+                }
+
+                // Chemin dynamique vers le document currentCredits
+                const currentCreditsDocRef = admin
+                    .firestore()
+                    .doc(
+                        `/organisations/${organisationId}/credits/currentCredits`
+                    );
+                // Chemin dynamique vers la collection credits
+                const creditscRef = admin
+                    .firestore()
+                    .collection(`/organisations/${organisationId}/credits`);
+
+                // Mise à jour du document currentCredits en ajoutant 100 crédits
+                await admin.firestore().runTransaction(async (transaction) => {
+                    const creditsDoc =
+                        await transaction.get(currentCreditsDocRef);
+                    if (!creditsDoc.exists) {
+                        throw new Error(
+                            "Le document currentCredits n'existe pas."
+                        );
+                    }
+
+                    const currentCredits = creditsDoc.data()?.amount || 0;
+                    const newCredits = currentCredits + 100;
+
+                    transaction.update(currentCreditsDocRef, {
+                        amount: newCredits,
+                        lastUpdated: FieldValue.serverTimestamp(),
+                    });
+                });
+                await admin.firestore().collection('payments').add({
+                    sessionId: session.id,
+                    organisationId: organisationId, // Stocker l'identifiant de l'organisation avec le paiement
+                    userId: userId,
+                    amount: session.amount_received,
+                    currency: session.currency,
+                    customer: session.customer,
+                    status: session.status,
+                    created: session.created,
+                    method: session.payment_method,
+                    added: FieldValue.serverTimestamp(),
+                });
+                await creditscRef.add({
+                    organisationId: organisationId, // Stocker l'identifiant de l'organisation avec le paiement
+                    userId: userId,
+                    creditsAdded: session.amount_received / 10,
+                    createAt: FieldValue.serverTimestamp(),
+                    transactionType: 'payement',
+                });
+
+                console.log(
+                    `100 crédits ajoutés avec succès pour l'organisation ${organisationId}.`
+                );
+
+                // Répondre à Stripe que l'événement a été traité
+                res.status(200).json({ received: true });
+            } catch (error) {
+                console.error(
+                    'Erreur lors de la mise à jour des crédits:',
+                    error
+                );
+                res.status(500).send('Internal Server Error');
+            }
+        } else {
+            // Respond to Stripe for unsupported event types
+            res.status(400).send('Event type not supported');
+        }
+        // Handle the event based on its type
+        // if (event.type === 'checkout.session.completed') {
+        //     const session = event.data.object as Stripe.Checkout.Session;
+
+        //     // Log the session for debugging
+        //     console.log('Checkout Session completed:', session);
+
+        //     try {
+        //         // Extraire l'identifiant de l'organisation des metadata de la session
+        //         // const organisationId = session.metadata?.organisationId;
+
+        //         // Mise à jour des détails de paiement dans Firestore
+        //         await admin.firestore().collection('payments').add({
+        //             sessionId: session.id,
+        //             // organisationId: organisationId, // Stocker l'identifiant de l'organisation avec le paiement
+        //             amountTotal: session.amount_total,
+        //             currency: session.currency,
+        //             customer: session.customer,
+        //             paymentStatus: session.payment_status,
+        //             created: session.created,
+        //         });
+
+        //         // Répondre à Stripe que l'événement a été traité
+        //         res.status(200).json({ received: true });
+        //     } catch (error) {
+        //         console.error(
+        //             'Erreur lors de la mise à jour des crédits:',
+        //             error
+        //         );
+        //         res.status(500).send('Internal Server Error');
+        //     }
+        // } else {
+        //     // Respond to Stripe for unsupported event types
+        //     res.status(400).send('Event type not supported');
+        // }
     }
 );

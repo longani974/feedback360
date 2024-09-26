@@ -42,6 +42,8 @@ import {
     where,
 } from 'firebase/firestore';
 
+import { createCheckoutSession } from '@stripe/firestore-stripe-payments'; // Assurez-vous que ce package est installé
+
 async function handleAuthAction(
     actionType: 'signIn' | 'signUp',
     email: string,
@@ -102,6 +104,7 @@ const createOrganisation = httpsCallable<
 async function createNewOrganisation(
     organisationName: CreateOrganisationParams
 ) {
+    console.log('second etape');
     const auth = getAuth();
     const user = auth.currentUser;
 
@@ -959,3 +962,26 @@ export const compiledResponsesLoader = async ({
         );
     }
 };
+
+// Crée une session de paiement pour un utilisateur
+export async function initiateCheckoutSession() {
+    try {
+        const session = await createCheckoutSession({
+            customerId: 'customer_id', // ID du client Stripe que tu as en Firestore ou dans ta base de données
+            priceId: 'price_1234', // ID du prix que tu as ajouté dans Firestore
+        });
+
+        // Redirige l'utilisateur vers la page de paiement Stripe
+        window.location.href = session.url;
+    } catch (error) {
+        console.error(
+            'Erreur lors de la création de la session de paiement : ',
+            error
+        );
+    }
+}
+
+export async function checkoutSuccess() {
+    console.log('loader checkoutSuccess');
+    return null;
+}

@@ -3,6 +3,7 @@ import { initializeApp } from 'firebase/app';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 import { connectAuthEmulator, getAuth } from 'firebase/auth'; // Importer les fonctions nécessaires
 import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
+import { getStripePayments } from '@invertase/firestore-stripe-payments';
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -22,6 +23,12 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const functions = getFunctions(app);
+
+// Initialiser Firestore Stripe Payments SDK
+export const payments = getStripePayments(app, {
+    productsCollection: 'products', // Collection Firestore pour les produits
+    customersCollection: 'customers', // Collection Firestore pour les clients
+});
 
 if (window.location.hostname === 'localhost') {
     connectAuthEmulator(auth, 'http://localhost:9099');

@@ -15,12 +15,14 @@
         "emulators:save": "firebase emulators:export data"
     },
     "dependencies": {
+        "@invertase/firestore-stripe-payments": "^0.0.7",
         "@radix-ui/react-avatar": "^1.1.0",
         "@radix-ui/react-dialog": "^1.1.1",
         "@radix-ui/react-dropdown-menu": "^2.1.1",
         "@radix-ui/react-navigation-menu": "^1.2.0",
         "@radix-ui/react-slot": "^1.1.0",
         "@radix-ui/react-tooltip": "^1.1.2",
+        "@stripe/firestore-stripe-payments": "^0.0.6",
         "class-variance-authority": "^0.7.0",
         "clsx": "^2.1.1",
         "firebase": "^10.12.4",
@@ -29,6 +31,7 @@
         "react-dom": "^18.3.1",
         "react-firebase-hooks": "^5.1.1",
         "react-router-dom": "^6.24.1",
+        "stripe": "^16.11.0",
         "tailwind-merge": "^2.4.0",
         "tailwindcss-animate": "^1.0.7",
         "vaul": "^0.9.1",
