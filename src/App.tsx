@@ -33,6 +33,7 @@ import {
     getUserOrganisations,
     loginAction,
     signupAction,
+    updateCampaign,
     updateQuestion,
 } from './lib/authUtils';
 import { AuthProvider } from './context/AuthContext';
@@ -87,6 +88,10 @@ const router = createBrowserRouter(
                             errorElement={
                                 <div>Impossible de créer le feedback</div>
                             }
+                        />
+                        <Route
+                            path="update-campaign/:campaignId"
+                            action={updateCampaign}
                         />
                         <Route
                             path="add-question/:campaignId"

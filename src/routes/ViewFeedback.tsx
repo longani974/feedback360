@@ -48,6 +48,31 @@ const ViewFeedback = () => {
     );
     const currentDate = new Date();
 
+    // New state variables for title and date editing
+    const [editTitle, setEditTitle] = useState(titre);
+    const [editStartDate, setEditStartDate] = useState(
+        startDate instanceof Timestamp
+            ? startDate.toDate()
+            : new Date(startDate)
+    );
+    const [editEndDate, setEditEndDate] = useState(
+        endDate instanceof Timestamp ? endDate.toDate() : new Date(endDate)
+    );
+
+    // State for tracking initial values
+    const [initialTitle, setInitialTitle] = useState(titre);
+    const [initialStartDate, setInitialStartDate] = useState(
+        startDate instanceof Timestamp
+            ? startDate.toDate()
+            : new Date(startDate)
+    );
+    const [initialEndDate, setInitialEndDate] = useState(
+        endDate instanceof Timestamp ? endDate.toDate() : new Date(endDate)
+    );
+
+    const [successMessage, setSuccessMessage] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
+
     useEffect(() => {
         const userId = auth.currentUser?.uid;
         if (userId) {
@@ -179,18 +204,156 @@ const ViewFeedback = () => {
     // Vérifier si la date actuelle est avant la date de début
     const isBeforeStartDate = currentDate < startDateAsDate;
 
+    // Function to check if changes have been made
+    const hasMadeChanges =
+        editTitle !== initialTitle ||
+        editStartDate.getTime() !== initialStartDate.getTime() ||
+        editEndDate.getTime() !== initialEndDate.getTime();
+
+    // Function to handle title and date submission
+    const handleSaveChanges = async () => {
+        setLoading(true);
+        setSuccessMessage('');
+        setErrorMessage('');
+
+        try {
+            await fetcher.submit(
+                {
+                    titre: editTitle,
+                    startDate: editStartDate.toISOString(),
+                    endDate: editEndDate.toISOString(),
+                },
+                {
+                    method: 'post',
+                    action: `/app/feedbacks/update-campaign/${campaignId}`,
+                }
+            );
+            // Update the initial values to reflect the newly saved values
+            setInitialTitle(editTitle);
+            setInitialStartDate(editStartDate);
+            setInitialEndDate(editEndDate);
+
+            setSuccessMessage('Changements sauvegardés avec succès !');
+        } catch (error) {
+            setErrorMessage('Erreur lors de la sauvegarde. Réessayez.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <TooltipProvider>
             <div className="container mx-auto py-8">
-                <h1 className="text-2xl font-semibold mb-4">{titre}</h1>
-                <p className="text-lg mb-4">
-                    {/* @ts-expect-error : formatDate(startDateAsDate) timestamp ou date bloc */}
-                    Date de début: {formatDate(startDateAsDate)}
-                </p>
-                <p className="text-lg mb-4">
-                    {/* @ts-expect-error : formatDate(startDateAsDate) timestamp ou date bloc */}
-                    Date de fin: {formatDate(endDateAsDate)}
-                </p>
+                {isAdmin ? (
+                    <div className="mb-4">
+                        <label className="block text-lg font-semibold mb-2">
+                            Modifier le titre
+                        </label>
+                        <input
+                            type="text"
+                            className="border p-2 rounded w-full"
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                        />
+                    </div>
+                ) : (
+                    <h1 className="text-2xl font-semibold mb-4">{titre}</h1>
+                )}
+
+                {isAdmin ? (
+                    <div className="flex gap-4 mb-4">
+                        <div>
+                            <label className="block text-lg font-semibold mb-2">
+                                Date de début
+                            </label>
+                            <input
+                                type="date"
+                                className="border p-2 rounded"
+                                value={
+                                    editStartDate.toISOString().split('T')[0]
+                                }
+                                onChange={(e) =>
+                                    setEditStartDate(new Date(e.target.value))
+                                }
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-lg font-semibold mb-2">
+                                Date de fin
+                            </label>
+                            <input
+                                type="date"
+                                className="border p-2 rounded"
+                                value={editEndDate.toISOString().split('T')[0]}
+                                onChange={(e) =>
+                                    setEditEndDate(new Date(e.target.value))
+                                }
+                            />
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        <p className="text-lg mb-4">
+                            Date de début: {formatDate(startDate)}
+                        </p>
+                        <p className="text-lg mb-4">
+                            Date de fin: {formatDate(endDate)}
+                        </p>
+                    </>
+                )}
+
+                {isAdmin && (
+                    <div className="mt-4 mb-8 pb-8 border-b-8">
+                        <Button
+                            onClick={handleSaveChanges}
+                            disabled={loading || !hasMadeChanges}
+                            className={`flex items-center space-x-2 ${
+                                loading || !hasMadeChanges
+                                    ? 'opacity-50 cursor-not-allowed'
+                                    : ''
+                            }`}
+                        >
+                            {loading ? (
+                                <svg
+                                    className="animate-spin h-5 w-5 mr-3 text-white"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <circle
+                                        className="opacity-25"
+                                        cx="12"
+                                        cy="12"
+                                        r="10"
+                                        stroke="currentColor"
+                                        strokeWidth="4"
+                                    ></circle>
+                                    <path
+                                        className="opacity-75"
+                                        fill="currentColor"
+                                        d="M4 12a8 8 0 018-8v4l-5 5h7a8 8 0 11-7 7v-4l5-5H4z"
+                                    ></path>
+                                </svg>
+                            ) : (
+                                'Sauvegarder les changements'
+                            )}
+                        </Button>
+
+                        {successMessage && (
+                            <p className="text-green-500 mt-2">
+                                Changements sauvegardés avec succès !
+                            </p>
+                        )}
+
+                        {errorMessage && (
+                            <p className="text-red-500 mt-2">
+                                Erreur lors de la sauvegarde. Réessayez.
+                            </p>
+                        )}
+                    </div>
+                )}
+
+                {/* Rest of your component */}
                 <div className="space-y-4">
                     {questions.length > 0 ? (
                         questions.map((question) => (

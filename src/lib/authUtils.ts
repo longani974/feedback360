@@ -781,7 +781,10 @@ export async function getAllQuestions({ params }: { params: Params<string> }) {
     }
 }
 
-export function formatDate(date: string | Timestamp): string {
+export function formatDate(date: string | Timestamp | Date): string {
+    if (date instanceof Date) {
+        return date.toLocaleDateString();
+    }
     if (typeof date === 'object' && 'toDate' in date) {
         // Si c'est un objet Timestamp, on le convertit en Date
         return date.toDate().toLocaleDateString();
@@ -879,6 +882,68 @@ export async function deleteQuestion({
     } catch (error) {
         console.error('Erreur lors de la suppression de la question:', error);
         return { status: 500, message: 'Erreur serveur' };
+    }
+}
+// Fonction pour  mettre à jour un feeedback
+export async function updateCampaign({
+    params,
+    request,
+}: {
+    params: Params<string>;
+    request: Request;
+}) {
+    const { campaignId } = params;
+    const formData = await request.formData();
+    const titre = formData.get('titre') as string;
+    const startDateStr = formData.get('startDate') as string;
+    const endDateStr = formData.get('endDate') as string;
+
+    const startDate = startDateStr ? new Date(startDateStr) : null;
+    const endDate = endDateStr ? new Date(endDateStr) : null;
+
+    if (startDate && isNaN(startDate.getTime())) {
+        return { status: 400, error: 'Date de début invalide' };
+    }
+    if (endDate && isNaN(endDate.getTime())) {
+        return { status: 400, error: 'Date de fin invalide' };
+    }
+    // Authentifier l'utilisateur
+    const user = await waitForAuth();
+
+    if (!user) {
+        return {
+            redirect: '/login',
+            error: 'Utilisateur non authentifié',
+        };
+    }
+
+    // Référence au document de feedbacks
+    const feedbacksDocRef = doc(db, 'feedbacks', `${campaignId}`);
+
+    // Structure des données de réponse
+    const feedbackData = {
+        startDate,
+        endDate,
+        titre,
+        updatedAt: serverTimestamp(), // Ajoute un timestamp pour la mise à jour
+    };
+
+    try {
+        // Ajout ou mise à jour du document de réponse
+        await setDoc(feedbacksDocRef, feedbackData, { merge: true });
+
+        // Redirection après ajout ou mise à jour de la réponse
+        return { status: 200 };
+    } catch (error) {
+        console.error(
+            "Erreur lors de l'ajout ou de la mise à jour de la réponse:",
+            error
+        );
+        return {
+            status: 500,
+            message:
+                "Erreur lors de l'ajout ou de la mise à jour de la réponse",
+        };
     }
 }
 
