@@ -7,7 +7,7 @@ import {
     CardContent,
     CardFooter,
 } from '@/components/ui/card';
-import { Link, useLoaderData } from 'react-router-dom';
+import { Link, useLoaderData, useParams } from 'react-router-dom';
 import { Users, MessageCircle } from 'lucide-react';
 import {
     Tooltip,
@@ -15,11 +15,18 @@ import {
     TooltipTrigger,
     TooltipContent,
 } from '@/components/ui/tooltip';
-import { auth } from '@/firebase';
+import { auth, db } from '@/firebase';
+import { getAuth } from 'firebase/auth';
+import { addDoc, collection, onSnapshot } from 'firebase/firestore';
 
 const Organisation = () => {
     const organisationData = useLoaderData();
     const [isAdmin, setIsAdmin] = useState(false);
+    const [loading, setLoading] = useState(false); // Pour gérer l'état de chargement
+    const [errorMessage, setErrorMessage] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
+
+    const { organisationId } = useParams();
 
     useEffect(() => {
         const userId = auth.currentUser?.uid;
@@ -36,9 +43,112 @@ const Organisation = () => {
         }
     }, []);
 
+    const handlePurchase = async () => {
+        const currentUser = getAuth().currentUser;
+        if (!currentUser) {
+            console.error('Utilisateur non authentifié');
+            return;
+        }
+
+        setLoading(true); // Démarrage du chargement
+        setErrorMessage('');
+        setSuccessMessage('');
+
+        const checkoutSessionData = {
+            price: 'price_1Q0GYQBKk6QvWOIeIf2cJFs1',
+            success_url: `${window.location.origin}/app/checkout/success`,
+            cancel_url: window.location.origin,
+            mode: 'payment',
+            metadata: {
+                organisationId: organisationId,
+                userId: currentUser.uid,
+            },
+        };
+
+        try {
+            const checkoutSessionRef = await addDoc(
+                collection(
+                    db,
+                    `customers/${currentUser.uid}/checkout_sessions`
+                ),
+                checkoutSessionData
+            );
+
+            onSnapshot(checkoutSessionRef, (snap) => {
+                const sessionData = snap.data();
+                if (sessionData) {
+                    const { error, url } = sessionData;
+                    if (error) {
+                        setErrorMessage(
+                            'Erreur lors de la création de la session : ' +
+                                error.message
+                        );
+                        setLoading(false);
+                    } else if (url) {
+                        window.location.assign(url); // Redirection vers Stripe
+                    }
+                }
+            });
+        } catch (error) {
+            if (error instanceof Error) {
+                setErrorMessage(
+                    'Erreur lors de la création de la session: ' + error.message
+                );
+            } else {
+                setErrorMessage(
+                    'Erreur inconnue lors de la création de la session.'
+                );
+            }
+            setLoading(false); // Fin du chargement en cas d'erreur
+        }
+    };
+
     return (
         <TooltipProvider>
             <div className="container mx-auto py-8">
+                <div className="mb-4">
+                    <Button
+                        onClick={handlePurchase}
+                        disabled={loading} // Désactiver pendant le chargement
+                        className={`w-full flex items-center justify-center ${
+                            loading ? 'bg-gray-500 cursor-not-allowed' : ''
+                        }`}
+                    >
+                        {loading ? (
+                            <svg
+                                className="animate-spin h-5 w-5 mr-2 text-white"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                            >
+                                <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                ></circle>
+                                <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8v4l-5 5h7a8 8 0 11-7 7v-4l5-5H4z"
+                                ></path>
+                            </svg>
+                        ) : (
+                            'Acheter 10 jetons'
+                        )}
+                    </Button>
+                </div>
+
+                {errorMessage && (
+                    <p className="text-red-500 mt-2">{errorMessage}</p>
+                )}
+
+                {successMessage && (
+                    <p className="text-green-500 mt-2">{successMessage}</p>
+                )}
+
                 <Card className="shadow-md hover:shadow-lg transition-shadow">
                     <CardHeader>
                         <CardTitle className="text-xl font-semibold">
