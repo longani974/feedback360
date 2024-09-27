@@ -128,6 +128,35 @@ async function createNewOrganisation(
     }
 }
 
+export async function organisationLoader() {
+    const auth = getAuth();
+
+    return new Promise((resolve, reject) => {
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                // Si l'utilisateur n'est pas authentifié, on renvoie une erreur
+                return reject(new Response('Unauthenticated', { status: 401 }));
+            }
+
+            const userId = user.uid;
+            const userOrganisationQuery = query(
+                collection(db, 'userOrganisationRelation'),
+                where('userId', '==', userId)
+            );
+
+            const querySnapshot = await getDocs(userOrganisationQuery);
+
+            // Si l'utilisateur a déjà une organisation, on renvoie les données correspondantes
+            if (!querySnapshot.empty) {
+                return resolve({ hasOrganisation: true });
+            }
+
+            // Si aucune organisation n'est trouvée, on renvoie false
+            return resolve({ hasOrganisation: false });
+        });
+    });
+}
+
 export async function addOrganisationAction({ request }: ActionFunctionArgs) {
     console.log('adding');
 

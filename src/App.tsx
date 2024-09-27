@@ -32,6 +32,7 @@ import {
     getQuestionById,
     getUserOrganisations,
     loginAction,
+    organisationLoader,
     signupAction,
     updateCampaign,
     updateQuestion,
@@ -163,6 +164,7 @@ const router = createBrowserRouter(
                         path="add-organisation"
                         element={<NewOrganisation />}
                         action={addOrganisationAction}
+                        loader={organisationLoader}
                         errorElement={<div>Oups</div>}
                     />
                 </Route>
