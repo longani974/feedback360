@@ -275,22 +275,59 @@ export async function getUserOrganisations() {
     }
 }
 
+// export async function getOrganisation({ params }: { params: Params<string> }) {
+//     const { organisationId } = params;
+//     if (!organisationId) {
+//         throw new Error("L'ID de l'organisation est manquant.");
+//     }
+//     const docRef = doc(db, 'organisations', organisationId);
+//     const docSnap = await getDoc(docRef);
+//     if (docSnap.exists()) {
+//         console.log('Document data:', docSnap.data());
+//         console.log('Doc ID: ', docSnap.id);
+//         return { ...docSnap.data(), id: docSnap.id };
+//     } else {
+//         // docSnap.data() will be undefined in this case
+//         console.log('No such document!');
+//         return null;
+//     }
+// }
+
 export async function getOrganisation({ params }: { params: Params<string> }) {
     const { organisationId } = params;
+
     if (!organisationId) {
         throw new Error("L'ID de l'organisation est manquant.");
     }
-    const docRef = doc(db, 'organisations', organisationId);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-        console.log('Document data:', docSnap.data());
-        console.log('Doc ID: ', docSnap.id);
-        return { ...docSnap.data(), id: docSnap.id };
-    } else {
-        // docSnap.data() will be undefined in this case
-        console.log('No such document!');
+
+    // Récupérer les informations de l'organisation
+    const organisationRef = doc(db, 'organisations', organisationId);
+    const organisationSnap = await getDoc(organisationRef);
+
+    if (!organisationSnap.exists()) {
+        console.log("Pas d'organisation trouvée !");
         return null;
     }
+
+    // Récupérer les crédits actuels
+    const currentCreditsRef = doc(
+        collection(db, 'organisations', organisationId, 'credits'),
+        'currentCredits'
+    );
+    const currentCreditsSnap = await getDoc(currentCreditsRef);
+
+    let currentCredits = 0;
+    if (currentCreditsSnap.exists()) {
+        currentCredits = currentCreditsSnap.data().amount;
+    } else {
+        console.log('Pas de crédits trouvés !');
+    }
+
+    return {
+        ...organisationSnap.data(),
+        id: organisationSnap.id,
+        currentCredits, // Inclure le nombre de crédits dans les données renvoyées
+    };
 }
 
 export async function addUserToOrganisation({
@@ -320,8 +357,15 @@ export async function addUserToOrganisation({
         const userSnapshot = await getDocs(userQuery);
 
         if (userSnapshot.empty) {
-            console.error(`No user found with email: ${newUserEmail}`);
-            return;
+            // console.error(`No user found with email: ${newUserEmail}`);
+            return json(
+                {
+                    error: "Il n'y a pas d'ultilisateur avec cette email. Êtes vous sur que cette personne est déjà inscrite sur feedback 360 ?",
+                    name: 'RelationExistsError',
+                    email: newUserEmail,
+                },
+                { status: 400 }
+            );
         }
 
         const newUserId = userSnapshot.docs[0].id;

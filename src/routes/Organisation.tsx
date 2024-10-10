@@ -20,14 +20,13 @@ import { getAuth } from 'firebase/auth';
 import { addDoc, collection, onSnapshot } from 'firebase/firestore';
 
 const Organisation = () => {
-    const organisationData = useLoaderData();
+    const organisationData = useLoaderData(); // Récupère les données du loader, y compris les crédits
     const [isAdmin, setIsAdmin] = useState(false);
     const [loading, setLoading] = useState(false); // Pour gérer l'état de chargement
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
 
     const { organisationId } = useParams();
-
     useEffect(() => {
         const userId = auth.currentUser?.uid;
         if (userId) {
@@ -136,7 +135,7 @@ const Organisation = () => {
                                 ></path>
                             </svg>
                         ) : (
-                            'Acheter 10 jetons'
+                            'Acheter 100 jetons'
                         )}
                     </Button>
                 </div>
@@ -154,6 +153,16 @@ const Organisation = () => {
                         <CardTitle className="text-xl font-semibold">
                             Gestion de l'Organisation
                         </CardTitle>
+                        {/* Affichage des crédits */}
+
+                        <p className="text-lg text-gray-600">
+                            Crédits disponibles :{' '}
+                            {typeof organisationData === 'object' &&
+                            organisationData !== null &&
+                            'currentCredits' in organisationData
+                                ? (organisationData.currentCredits as number)
+                                : 'Non disponible'}
+                        </p>
                     </CardHeader>
                     <CardContent className="flex flex-col gap-4">
                         <div className="flex flex-col md:flex-row gap-4">
