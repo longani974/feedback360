@@ -96,7 +96,6 @@ const DashboardLayout = () => {
                                 size="icon"
                                 className="rounded-full"
                             >
-                                <div>{user?.email}</div>
                                 <Avatar>
                                     <AvatarFallback>
                                         {user?.photoURL ? (
@@ -117,8 +116,13 @@ const DashboardLayout = () => {
                         <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Mon Compte</DropdownMenuLabel>
                             <DropdownMenuSeparator />
+                            {/* Afficher l'email ici dans le menu déroulant */}
+                            <DropdownMenuItem disabled>
+                                {user?.email}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
                             <Link to="/app/profile">
-                                <DropdownMenuItem className="cursor-pointer">
+                                <DropdownMenuItem className="hidden cursor-pointer">
                                     Modifier
                                 </DropdownMenuItem>
                             </Link>
@@ -139,7 +143,7 @@ const DashboardLayout = () => {
                             {getPageTitle(location.pathname)}
                         </h1>
                     </div>
-                    <div className="flex flex-1 justify-center rounded-lg border border-dashed shadow-sm">
+                    <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
                         <Outlet />
                     </div>
                 </main>
