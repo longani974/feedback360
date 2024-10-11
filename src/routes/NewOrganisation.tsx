@@ -39,8 +39,35 @@ const NewOrganisation = () => {
     // Si l'utilisateur a déjà une organisation, on redirige vers la page principale
 
     if (hasOrganisation) {
-        return <p>Vous avez déjà une organisation.</p>;
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <Card className="w-[350px] p-4">
+                    <CardHeader>
+                        <CardTitle>Organisation existante</CardTitle>
+                        <CardDescription>
+                            Vous avez déjà créé une organisation. Actuellement,
+                            vous ne pouvez créer qu'une seule organisation par
+                            compte.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-sm text-gray-600">
+                            Si vous souhaitez gérer plusieurs organisations,
+                            cette fonctionnalité sera bientôt disponible dans
+                            une future version de Feedback360. Restez à l'affût
+                            des mises à jour !
+                        </p>
+                    </CardContent>
+                    <CardFooter>
+                        <p className="text-sm text-gray-500">
+                            Pour toute question, n'hésitez pas à nous contacter.
+                        </p>
+                    </CardFooter>
+                </Card>
+            </div>
+        );
     }
+
     return (
         <div className="flex items-center justify-center min-h-screen mt-4 mb-4">
             <Card className="w-[350px]">

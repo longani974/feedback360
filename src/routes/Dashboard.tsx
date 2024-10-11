@@ -72,9 +72,39 @@ const Dashboard = () => {
                             </Button>
                         </CardFooter>
                     </Card>
-
-                    {/* Notifications Card */}
+                    {/* Feedbacks Card */}
                     <Card className="shadow-md hover:shadow-lg transition-shadow">
+                        <CardHeader className="flex items-center justify-between">
+                            <CardTitle className="text-lg font-medium">
+                                Mes Feedbacks
+                            </CardTitle>
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <FileText
+                                        className="w-6 h-6 text-gray-500 cursor-pointer"
+                                        onClick={() =>
+                                            navigate('/app/feedbacks')
+                                        }
+                                    />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Voir tous les feedbacks</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-gray-600">
+                                Accédez à vos feedbacks et gérez les réponses.
+                            </p>
+                        </CardContent>
+                        <CardFooter className="flex justify-end">
+                            <Button onClick={() => navigate('/app/feedbacks')}>
+                                Voir les Feedbacks
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                    {/* Notifications Card */}
+                    <Card className="hidden shadow-md hover:shadow-lg transition-shadow">
                         <CardHeader className="flex items-center justify-between">
                             <CardTitle className="text-lg font-medium">
                                 Notifications
@@ -110,7 +140,7 @@ const Dashboard = () => {
                     </Card>
 
                     {/* Settings Card */}
-                    <Card className="shadow-md hover:shadow-lg transition-shadow">
+                    <Card className="hidden shadow-md hover:shadow-lg transition-shadow">
                         <CardHeader className="flex items-center justify-between">
                             <CardTitle className="text-lg font-medium">
                                 Paramètres

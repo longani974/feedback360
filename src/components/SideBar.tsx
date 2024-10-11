@@ -49,13 +49,15 @@ const SideBar = () => {
                                 6
                             </Badge> */}
                         </Link>
-                        <Link
-                            to="/app/profile"
-                            className={getLinkClassName('/app/profile')}
-                        >
-                            <User className="h-4 w-4" />
-                            Mon profile
-                        </Link>
+                        <div className="hidden">
+                            <Link
+                                to="/app/profile"
+                                className={getLinkClassName('/app/profile')}
+                            >
+                                <User className="h-4 w-4" />
+                                Mon profile
+                            </Link>
+                        </div>
                     </nav>
                 </div>
                 {/* ---------------------------------------- */}

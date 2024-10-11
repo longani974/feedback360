@@ -7,7 +7,7 @@ import {
     CardContent,
     CardFooter,
 } from '@/components/ui/card';
-import { Link, useLoaderData, useParams } from 'react-router-dom';
+import { Link, useLoaderData, useNavigate, useParams } from 'react-router-dom';
 import { Users, MessageCircle } from 'lucide-react';
 import {
     Tooltip,
@@ -25,6 +25,7 @@ const Organisation = () => {
     const [loading, setLoading] = useState(false); // Pour gérer l'état de chargement
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
+    const navigate = useNavigate();
 
     const { organisationId } = useParams();
     useEffect(() => {
@@ -101,6 +102,29 @@ const Organisation = () => {
             setLoading(false); // Fin du chargement en cas d'erreur
         }
     };
+
+    if (!isAdmin) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <Card className="w-[350px]">
+                    <CardHeader className="text-2xl font-semibold">
+                        <CardTitle>Accès aux Feedbacks</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-lg text-gray-600 mb-4">
+                            Vous n'avez pas les droits d'administration, mais
+                            vous pouvez consulter et répondre aux feedbacks.
+                        </p>
+                    </CardContent>
+                    <CardFooter className="flex justify-center">
+                        <Button onClick={() => navigate('/app/feedbacks')}>
+                            Accéder aux Feedbacks
+                        </Button>
+                    </CardFooter>
+                </Card>
+            </div>
+        );
+    }
 
     return (
         <TooltipProvider>
