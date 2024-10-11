@@ -185,10 +185,12 @@ const Dashboard = () => {
                             <PlusCircle className="mr-2" />
                             Créer une Nouvelle Organisation
                         </Button>
-                        <Button className="flex items-center   px-4 py-2 rounded-md shadow  transition">
-                            <FileText className="mr-2" />
-                            Voir les Rapports
-                        </Button>
+                        <div className="hidden">
+                            <Button className="flex items-center   px-4 py-2 rounded-md shadow  transition">
+                                <FileText className="mr-2" />
+                                Voir les Rapports
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </div>

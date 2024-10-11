@@ -73,7 +73,7 @@ const Report = () => {
                             </div>
                         </CardContent>
                         <CardFooter className="p-4 text-right">
-                            <Button className="bg-blue-600 text-white hover:bg-blue-700">
+                            <Button className="hidden bg-blue-600 text-white hover:bg-blue-700">
                                 Détail
                             </Button>
                         </CardFooter>
